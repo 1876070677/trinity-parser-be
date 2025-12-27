@@ -21,8 +21,13 @@
     "strictBindCallApply": false,
     "noFallthroughCasesInSwitch": false,
     "paths": {
-      "@libs/types": ["libs/types/index.ts"]
+      "@libs/types": [
+        "libs/types/index.ts"
+      ]
     }
   },
-  "include": ["apps/**/*", "libs/**/*"]
+  "include": [
+    "apps/**/*",
+    "libs/**/*"
+  ]
 }

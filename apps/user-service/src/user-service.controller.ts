@@ -1,5 +1,5 @@
-import { Controller, OnModuleInit } from '@nestjs/common';
-import { MessagePattern, Payload } from '@nestjs/microservices';
+import { Controller, Inject, OnModuleInit } from '@nestjs/common';
+import { ClientKafka, MessagePattern, Payload } from '@nestjs/microservices';
 import { Kafka } from 'kafkajs';
 import { AuthData, LoginData, LogoutData, UserInfoData } from '@libs/types';
 import { UserServiceService } from './user-service.service';
@@ -14,7 +14,11 @@ export class UserServiceController implements OnModuleInit {
     'user.userInfo',
   ];
 
-  constructor(private readonly userServiceService: UserServiceService) {}
+  constructor(
+    private readonly userServiceService: UserServiceService,
+    @Inject('MANAGEMENT_SERVICE')
+    private readonly managementClient: ClientKafka,
+  ) {}
 
   async onModuleInit() {
     const kafka = new Kafka({
@@ -44,6 +48,9 @@ export class UserServiceController implements OnModuleInit {
       console.log(`Created topics: ${createdTopics.join(', ')}`);
     }
     await admin.disconnect();
+
+    // Management Service 연결
+    await this.managementClient.connect();
   }
 
   // 1단계: samlRequest 획득
@@ -61,7 +68,12 @@ export class UserServiceController implements OnModuleInit {
   // 3단계: SAMLResponse로 csrf 토큰 획득
   @MessagePattern('user.login')
   async login(@Payload() data: LoginData) {
-    return this.userServiceService.login(data);
+    const result = await this.userServiceService.login(data);
+
+    // 로그인 성공 시 이벤트 발행 (fire-and-forget)
+    this.managementClient.emit('management.loginSuccess', {});
+
+    return result;
   }
 
   // 4단계: 로그아웃

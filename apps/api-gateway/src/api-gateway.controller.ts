@@ -16,16 +16,20 @@ export class ApiGatewayController {
   constructor(
     private readonly apiGatewayService: ApiGatewayService,
     @Inject('USER_SERVICE') private readonly userClient: ClientKafka,
+    @Inject('MANAGEMENT_SERVICE')
+    private readonly managementClient: ClientKafka,
   ) {}
 
   async onModuleInit() {
-    const topics = [
+    const userTopics = [
       'user.loginForm',
       'user.auth',
       'user.login',
       'user.logout',
       'user.userInfo',
     ];
+    const managementTopics = ['management.getLoginCount'];
+    const allTopics = [...userTopics, ...managementTopics];
 
     // Kafka admin으로 reply 토픽 생성
     const kafka = new Kafka({
@@ -37,7 +41,7 @@ export class ApiGatewayController {
 
     // reply 토픽들을 개별적으로 생성
     const createdTopics: string[] = [];
-    for (const topic of topics) {
+    for (const topic of allTopics) {
       const replyTopic = `${topic}.reply`;
       try {
         const created = await admin.createTopics({
@@ -60,8 +64,12 @@ export class ApiGatewayController {
     await admin.disconnect();
 
     // Gateway가 응답을 받을 토픽들을 구독
-    topics.forEach((topic) => this.userClient.subscribeToResponseOf(topic));
+    userTopics.forEach((topic) => this.userClient.subscribeToResponseOf(topic));
+    managementTopics.forEach((topic) =>
+      this.managementClient.subscribeToResponseOf(topic),
+    );
     await this.userClient.connect();
+    await this.managementClient.connect();
   }
 
   @Get()
@@ -180,6 +188,19 @@ export class ApiGatewayController {
     );
 
     res.json({ success: true, userInfo: result.userInfo });
+  }
+
+  // 로그인 카운트 조회
+  @Get('api/login-count')
+  async getLoginCount(): Promise<{ success: boolean; count: number }> {
+    const result = await lastValueFrom(
+      this.managementClient.send<{ count: number }>(
+        'management.getLoginCount',
+        {},
+      ),
+    );
+
+    return { success: true, count: result.count };
   }
 
   // samlRequest, samlResponse, csrf를 제외한 쿠키 추출
