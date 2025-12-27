@@ -1,0 +1,19 @@
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Install dependencies for hot reload
+RUN npm install -g @nestjs/cli
+
+# Copy package files
+COPY package*.json ./
+
+RUN npm ci
+
+# Source code will be mounted as volume
+# No COPY . . here for development
+
+ARG APP_NAME
+ENV APP_NAME=${APP_NAME}
+
+CMD ["sh", "-c", "npm run start:dev -- ${APP_NAME}"]
