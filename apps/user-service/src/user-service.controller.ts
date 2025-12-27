@@ -1,7 +1,7 @@
 import { Controller, OnModuleInit } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { Kafka } from 'kafkajs';
-import type { AuthData, LoginData, LogoutData } from './user-service.service';
+import { AuthData, LoginData, LogoutData, UserInfoData } from '@libs/types';
 import { UserServiceService } from './user-service.service';
 
 @Controller()
@@ -11,6 +11,7 @@ export class UserServiceController implements OnModuleInit {
     'user.auth',
     'user.login',
     'user.logout',
+    'user.userInfo',
   ];
 
   constructor(private readonly userServiceService: UserServiceService) {}
@@ -67,5 +68,11 @@ export class UserServiceController implements OnModuleInit {
   @MessagePattern('user.logout')
   async logout(@Payload() data: LogoutData) {
     return this.userServiceService.logout(data);
+  }
+
+  // 5단계: 사용자 정보 조회
+  @MessagePattern('user.userInfo')
+  async getUserInfo(@Payload() data: UserInfoData) {
+    return this.userServiceService.getUserInfo(data);
   }
 }

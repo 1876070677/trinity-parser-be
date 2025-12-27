@@ -1,36 +1,15 @@
 import { Injectable } from '@nestjs/common';
-
-export interface AuthData {
-  id: string;
-  password: string;
-  samlRequest: string;
-  cookies: string[];
-}
-
-export interface LoginData {
-  samlResponse: string;
-  cookies: string[];
-}
-
-export interface LoginFormResponse {
-  samlRequest: string;
-  cookies: string[];
-}
-
-export interface AuthResponse {
-  samlResponse: string;
-  cookies: string[];
-}
-
-export interface LoginResponse {
-  csrf: string;
-  cookies: string[];
-}
-
-export interface LogoutData {
-  csrf: string;
-  cookies: string[];
-}
+import {
+  AuthData,
+  AuthResponse,
+  LoginData,
+  LoginFormResponse,
+  LoginResponse,
+  LogoutData,
+  TrinityInfo,
+  UserInfoData,
+  UserInfoResponse,
+} from '@libs/types';
 
 @Injectable()
 export class UserServiceService {
@@ -227,5 +206,99 @@ export class UserServiceService {
     }
 
     return { success: true };
+  }
+
+  // 5단계: 사용자 정보 조회
+  async getUserInfo(data: UserInfoData): Promise<UserInfoResponse> {
+    const headers = {
+      'User-Agent': this.USER_AGENT,
+      Accept: 'application/json, text/javascript, */*; q=0.01',
+      'Content-Type': 'application/json',
+      'x-csrf-token': data.csrf,
+      'x-requested-with': 'XMLHttpRequest',
+      'Accept-Encoding': 'gzip, deflate, br, zstd',
+      'Accept-Language': 'ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7',
+      Host: 'uportal.catholic.ac.kr',
+      Origin: 'https://uportal.catholic.ac.kr',
+      Referer: 'https://uportal.catholic.ac.kr/portal/main.do',
+      Cookie: this.formatCookieHeader(data.cookies),
+    };
+
+    // 개인 정보 조회
+    const myInfoResponse = await fetch(
+      `${this.BASE_PATH}/portal/menu/myInformation.ajax`,
+      {
+        method: 'POST',
+        headers,
+        body: '',
+      },
+    );
+
+    if (!myInfoResponse.ok) {
+      throw new Error('사용자 정보 조회 실패');
+    }
+
+    const myInfoCookies = this.parseCookies(
+      myInfoResponse.headers.getSetCookie(),
+    );
+    const myInfoData = (await myInfoResponse.json()) as {
+      modelAndView?: { model?: { result?: TrinityInfo[] } };
+    };
+
+    const userInfo: TrinityInfo = {};
+
+    // 개인 정보 파싱
+    const myInfoResult = myInfoData?.modelAndView?.model?.result;
+    if (myInfoResult && myInfoResult.length > 0) {
+      const info = myInfoResult[0];
+      userInfo.userNm = info.userNm;
+      userInfo.userId = info.userId;
+      userInfo.userEmail = info.userEmail;
+      userInfo.userTel = info.userTel;
+      userInfo.deptNm = info.deptNm;
+    }
+
+    const mergedCookies = this.mergeCookies(data.cookies, myInfoCookies);
+
+    // 학적 정보 조회
+    const schoolInfoResponse = await fetch(
+      `${this.BASE_PATH}/portal/portlet/P044/shtmData.ajax`,
+      {
+        method: 'POST',
+        headers: {
+          ...headers,
+          Cookie: this.formatCookieHeader(mergedCookies),
+        },
+        body: '',
+      },
+    );
+
+    if (!schoolInfoResponse.ok) {
+      throw new Error('학적 정보 조회 실패');
+    }
+
+    const schoolInfoCookies = this.parseCookies(
+      schoolInfoResponse.headers.getSetCookie(),
+    );
+    const schoolInfoData = (await schoolInfoResponse.json()) as {
+      modelAndView?: { model?: { result?: TrinityInfo } };
+    };
+
+    // 학적 정보 파싱
+    const schoolResult = schoolInfoData?.modelAndView?.model?.result;
+    if (schoolResult) {
+      userInfo.grade = schoolResult.grade;
+      userInfo.semester = schoolResult.semester;
+      userInfo.status = schoolResult.status;
+      userInfo.entrYy = schoolResult.entrYy;
+      userInfo.campusNm = schoolResult.campusNm;
+      userInfo.collNm = schoolResult.collNm;
+      userInfo.majorNm = schoolResult.majorNm;
+    }
+
+    return {
+      userInfo,
+      cookies: this.mergeCookies(mergedCookies, schoolInfoCookies),
+    };
   }
 }

@@ -3,22 +3,13 @@ import { ClientKafka } from '@nestjs/microservices';
 import type { Request, Response } from 'express';
 import { Kafka } from 'kafkajs';
 import { lastValueFrom } from 'rxjs';
+import {
+  AuthResponse,
+  LoginFormResponse,
+  LoginResponse,
+  UserInfoResponse,
+} from '@libs/types';
 import { ApiGatewayService } from './api-gateway.service';
-
-interface LoginFormResponse {
-  samlRequest: string;
-  cookies: string[];
-}
-
-interface AuthResponse {
-  samlResponse: string;
-  cookies: string[];
-}
-
-interface LoginResponse {
-  csrf: string;
-  cookies: string[];
-}
 
 @Controller()
 export class ApiGatewayController {
@@ -28,7 +19,13 @@ export class ApiGatewayController {
   ) {}
 
   async onModuleInit() {
-    const topics = ['user.loginForm', 'user.auth', 'user.login', 'user.logout'];
+    const topics = [
+      'user.loginForm',
+      'user.auth',
+      'user.login',
+      'user.logout',
+      'user.userInfo',
+    ];
 
     // Kafka admin으로 reply 토픽 생성
     const kafka = new Kafka({
@@ -166,6 +163,26 @@ export class ApiGatewayController {
     });
 
     res.json({ success: true });
+  }
+
+  // 5단계: 사용자 정보 조회
+  @Get('api/user-info')
+  async getUserInfo(@Req() req: Request, @Res() res: Response): Promise<void> {
+    const reqCookies = (req.cookies ?? {}) as Record<string, string>;
+    const csrf = reqCookies['csrf'] ?? '';
+    const cookies = this.extractSchoolCookies(reqCookies);
+
+    const result = await lastValueFrom(
+      this.userClient.send<UserInfoResponse>('user.userInfo', {
+        csrf,
+        cookies,
+      }),
+    );
+
+    // 학교 서버 쿠키들을 우리 도메인으로 재설정
+    this.setSchoolCookies(res, result.cookies);
+
+    res.json({ success: true, userInfo: result.userInfo });
   }
 
   // samlRequest, samlResponse, csrf를 제외한 쿠키 추출
