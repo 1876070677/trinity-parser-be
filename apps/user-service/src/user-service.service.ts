@@ -27,6 +27,11 @@ export interface LoginResponse {
   cookies: string[];
 }
 
+export interface LogoutData {
+  csrf: string;
+  cookies: string[];
+}
+
 @Injectable()
 export class UserServiceService {
   private readonly BASE_PATH = 'https://uportal.catholic.ac.kr';
@@ -38,12 +43,23 @@ export class UserServiceService {
     return setCookieHeaders.map((cookie) => cookie.split(';')[0]);
   }
 
-  // 쿠키 배열을 Cookie 헤더 문자열로 변환 (saml 관련 값 제외)
+  // 쿠키 배열을 Cookie 헤더 문자열로 변환
   private formatCookieHeader(cookies: string[]): string {
-    const excludeKeys = ['samlRequest', 'samlResponse'];
-    return cookies
-      .filter((cookie) => !excludeKeys.includes(cookie.split('=')[0]))
-      .join('; ');
+    return cookies.join('; ');
+  }
+
+  // 쿠키 병합 (중복 시 새 쿠키로 덮어쓰기)
+  private mergeCookies(oldCookies: string[], newCookies: string[]): string[] {
+    const cookieMap = new Map<string, string>();
+    for (const cookie of oldCookies) {
+      const [name] = cookie.split('=');
+      cookieMap.set(name, cookie);
+    }
+    for (const cookie of newCookies) {
+      const [name] = cookie.split('=');
+      cookieMap.set(name, cookie);
+    }
+    return Array.from(cookieMap.values());
   }
 
   // 1단계: samlRequest 획득
@@ -118,7 +134,7 @@ export class UserServiceService {
 
     return {
       samlResponse: samlResponseMatch[1],
-      cookies: [...data.cookies, ...cookies],
+      cookies: this.mergeCookies(data.cookies, cookies),
     };
   }
 
@@ -144,17 +160,19 @@ export class UserServiceService {
 
     if (response.status === 301 || response.status === 302) {
       const redirectUrl = response.headers.get('location');
+      const cookies = this.parseCookies(response.headers.getSetCookie());
+      const allCookies = this.mergeCookies(data.cookies, cookies);
       if (!redirectUrl) {
         throw new Error('리다이렉트 URL이 없습니다.');
       }
 
       const redirectResponse = await fetch(
-        'http://uportal.catholic.ac.kr/portal/loginSuccess.do⁠',
+        'https://uportal.catholic.ac.kr/portal/loginSuccess.do⁠',
         {
           method: 'GET',
           headers: {
             'User-Agent': this.USER_AGENT,
-            Cookie: this.formatCookieHeader(data.cookies),
+            Cookie: this.formatCookieHeader(allCookies),
           },
         },
       );
@@ -163,7 +181,7 @@ export class UserServiceService {
         throw new Error('login 리다이렉트 요청 실패');
       }
 
-      const cookies = this.parseCookies(
+      const redirectCookies = this.parseCookies(
         redirectResponse.headers.getSetCookie(),
       );
       const html = await redirectResponse.text();
@@ -175,10 +193,39 @@ export class UserServiceService {
 
       return {
         csrf: csrfMatch[1],
-        cookies: [...data.cookies, ...cookies],
+        cookies: this.mergeCookies(allCookies, redirectCookies),
       };
     }
 
     throw new Error('login 요청 실패');
+  }
+
+  // 4단계: 로그아웃
+  async logout(data: LogoutData): Promise<{ success: boolean }> {
+    const formBody = new URLSearchParams({
+      _csrf: data.csrf,
+    });
+
+    const response = await fetch(`${this.BASE_PATH}/portal/login/logout.do`, {
+      method: 'POST',
+      redirect: 'manual',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'User-Agent': this.USER_AGENT,
+        Accept: 'application/json, text/javascript, */*; q=0.01',
+        'Accept-Encoding': 'gzip, deflate, br, zstd',
+        'Accept-Language': 'ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7',
+        Host: 'uportal.catholic.ac.kr',
+        Cookie: this.formatCookieHeader(data.cookies),
+      },
+      body: formBody.toString(),
+    });
+
+    // 302 리다이렉트도 성공으로 처리
+    if (!response.ok && response.status !== 302) {
+      throw new Error(`logout 요청 실패: ${response.status}`);
+    }
+
+    return { success: true };
   }
 }

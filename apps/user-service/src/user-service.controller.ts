@@ -1,12 +1,17 @@
 import { Controller, OnModuleInit } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { Kafka } from 'kafkajs';
-import type { AuthData, LoginData } from './user-service.service';
+import type { AuthData, LoginData, LogoutData } from './user-service.service';
 import { UserServiceService } from './user-service.service';
 
 @Controller()
 export class UserServiceController implements OnModuleInit {
-  private readonly topics = ['user.loginForm', 'user.auth', 'user.login'];
+  private readonly topics = [
+    'user.loginForm',
+    'user.auth',
+    'user.login',
+    'user.logout',
+  ];
 
   constructor(private readonly userServiceService: UserServiceService) {}
 
@@ -18,16 +23,25 @@ export class UserServiceController implements OnModuleInit {
     const admin = kafka.admin();
     await admin.connect();
 
-    // 이 서비스가 구독할 토픽들 생성
-    await admin.createTopics({
-      topics: this.topics.map((topic) => ({
-        topic,
-        numPartitions: 1,
-        replicationFactor: 1,
-      })),
-    });
-
-    console.log(`Created topics: ${this.topics.join(', ')}`);
+    // 이 서비스가 구독할 토픽들을 개별적으로 생성
+    const createdTopics: string[] = [];
+    for (const topic of this.topics) {
+      try {
+        const created = await admin.createTopics({
+          topics: [{ topic, numPartitions: 1, replicationFactor: 1 }],
+        });
+        if (created) {
+          createdTopics.push(topic);
+        } else {
+          console.log(`토픽 이미 존재: ${topic}`);
+        }
+      } catch (error) {
+        console.log(`토픽 생성 실패 ${topic}:`, error);
+      }
+    }
+    if (createdTopics.length > 0) {
+      console.log(`Created topics: ${createdTopics.join(', ')}`);
+    }
     await admin.disconnect();
   }
 
@@ -47,5 +61,11 @@ export class UserServiceController implements OnModuleInit {
   @MessagePattern('user.login')
   async login(@Payload() data: LoginData) {
     return this.userServiceService.login(data);
+  }
+
+  // 4단계: 로그아웃
+  @MessagePattern('user.logout')
+  async logout(@Payload() data: LogoutData) {
+    return this.userServiceService.logout(data);
   }
 }

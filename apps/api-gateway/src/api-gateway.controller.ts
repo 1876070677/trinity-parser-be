@@ -28,7 +28,7 @@ export class ApiGatewayController {
   ) {}
 
   async onModuleInit() {
-    const topics = ['user.loginForm', 'user.auth', 'user.login'];
+    const topics = ['user.loginForm', 'user.auth', 'user.login', 'user.logout'];
 
     // Kafka admin으로 reply 토픽 생성
     const kafka = new Kafka({
@@ -38,18 +38,28 @@ export class ApiGatewayController {
     const admin = kafka.admin();
     await admin.connect();
 
-    // reply 토픽만 생성 (원본 토픽은 해당 서비스가 생성)
-    await admin.createTopics({
-      topics: topics.map((topic) => ({
-        topic: `${topic}.reply`,
-        numPartitions: 1,
-        replicationFactor: 1,
-      })),
-    });
-
-    console.log(
-      `Created reply topics: ${topics.map((t) => `${t}.reply`).join(', ')}`,
-    );
+    // reply 토픽들을 개별적으로 생성
+    const createdTopics: string[] = [];
+    for (const topic of topics) {
+      const replyTopic = `${topic}.reply`;
+      try {
+        const created = await admin.createTopics({
+          topics: [
+            { topic: replyTopic, numPartitions: 1, replicationFactor: 1 },
+          ],
+        });
+        if (created) {
+          createdTopics.push(replyTopic);
+        } else {
+          console.log(`토픽 이미 존재: ${replyTopic}`);
+        }
+      } catch (error) {
+        console.log(`토픽 생성 실패 ${replyTopic}:`, error);
+      }
+    }
+    if (createdTopics.length > 0) {
+      console.log(`Created reply topics: ${createdTopics.join(', ')}`);
+    }
     await admin.disconnect();
 
     // Gateway가 응답을 받을 토픽들을 구독
@@ -136,11 +146,33 @@ export class ApiGatewayController {
     res.json({ success: true, csrf: result.csrf });
   }
 
-  // 학교 관련 쿠키만 추출
+  // 4단계: 로그아웃
+  @Post('api/logout')
+  async logout(@Req() req: Request, @Res() res: Response): Promise<void> {
+    const reqCookies = (req.cookies ?? {}) as Record<string, string>;
+    const csrf = reqCookies['csrf'] ?? '';
+    const cookies = this.extractSchoolCookies(reqCookies);
+
+    await lastValueFrom(
+      this.userClient.send<{ success: boolean }>('user.logout', {
+        csrf,
+        cookies,
+      }),
+    );
+
+    // 모든 쿠키 정리
+    Object.keys(reqCookies).forEach((name) => {
+      res.clearCookie(name);
+    });
+
+    res.json({ success: true });
+  }
+
+  // samlRequest, samlResponse, csrf를 제외한 쿠키 추출
   private extractSchoolCookies(cookies: Record<string, string>): string[] {
-    const schoolCookieNames = ['JSESSIONID', 'WMONID'];
+    const excludeNames = ['samlRequest', 'samlResponse', 'csrf'];
     return Object.entries(cookies)
-      .filter(([name]) => schoolCookieNames.includes(name))
+      .filter(([name]) => !excludeNames.includes(name))
       .map(([name, value]) => `${name}=${value}`);
   }
 
