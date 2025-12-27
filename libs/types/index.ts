@@ -39,20 +39,13 @@ export interface UserInfoData {
 
 export interface TrinityInfo {
   userNm?: string;
-  userId?: string;
-  userEmail?: string;
-  userTel?: string;
+  userNo?: string;
   deptNm?: string;
-  grade?: string;
-  semester?: string;
-  status?: string;
-  entrYy?: string;
-  campusNm?: string;
-  collNm?: string;
-  majorNm?: string;
+  campFg?: string;
+  shtmYyyy?: string;
+  SHTM_FG?: string;
 }
 
 export interface UserInfoResponse {
   userInfo: TrinityInfo;
-  cookies: string[];
 }

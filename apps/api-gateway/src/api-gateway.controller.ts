@@ -179,9 +179,6 @@ export class ApiGatewayController {
       }),
     );
 
-    // 학교 서버 쿠키들을 우리 도메인으로 재설정
-    this.setSchoolCookies(res, result.cookies);
-
     res.json({ success: true, userInfo: result.userInfo });
   }
 

@@ -238,9 +238,6 @@ export class UserServiceService {
       throw new Error('사용자 정보 조회 실패');
     }
 
-    const myInfoCookies = this.parseCookies(
-      myInfoResponse.headers.getSetCookie(),
-    );
     const myInfoData = (await myInfoResponse.json()) as {
       modelAndView?: { model?: { result?: TrinityInfo[] } };
     };
@@ -252,13 +249,10 @@ export class UserServiceService {
     if (myInfoResult && myInfoResult.length > 0) {
       const info = myInfoResult[0];
       userInfo.userNm = info.userNm;
-      userInfo.userId = info.userId;
-      userInfo.userEmail = info.userEmail;
-      userInfo.userTel = info.userTel;
+      userInfo.userNo = info.userNo;
+      userInfo.campFg = info.campFg;
       userInfo.deptNm = info.deptNm;
     }
-
-    const mergedCookies = this.mergeCookies(data.cookies, myInfoCookies);
 
     // 학적 정보 조회
     const schoolInfoResponse = await fetch(
@@ -267,38 +261,29 @@ export class UserServiceService {
         method: 'POST',
         headers: {
           ...headers,
-          Cookie: this.formatCookieHeader(mergedCookies),
+          Cookie: this.formatCookieHeader(data.cookies),
         },
         body: '',
       },
     );
 
-    if (!schoolInfoResponse.ok) {
-      throw new Error('학적 정보 조회 실패');
-    }
+    // 학적 정보는 졸업생/휴학생 등은 조회 실패할 수 있으므로 성공시에만 채움
+    if (schoolInfoResponse.ok) {
+      const schoolInfoData = (await schoolInfoResponse.json()) as {
+        modelAndView?: {
+          model?: { result?: { YYYY?: string; SHTM_FG?: string } };
+        };
+      };
 
-    const schoolInfoCookies = this.parseCookies(
-      schoolInfoResponse.headers.getSetCookie(),
-    );
-    const schoolInfoData = (await schoolInfoResponse.json()) as {
-      modelAndView?: { model?: { result?: TrinityInfo } };
-    };
-
-    // 학적 정보 파싱
-    const schoolResult = schoolInfoData?.modelAndView?.model?.result;
-    if (schoolResult) {
-      userInfo.grade = schoolResult.grade;
-      userInfo.semester = schoolResult.semester;
-      userInfo.status = schoolResult.status;
-      userInfo.entrYy = schoolResult.entrYy;
-      userInfo.campusNm = schoolResult.campusNm;
-      userInfo.collNm = schoolResult.collNm;
-      userInfo.majorNm = schoolResult.majorNm;
+      const schoolResult = schoolInfoData?.modelAndView?.model?.result;
+      if (schoolResult) {
+        userInfo.shtmYyyy = schoolResult.YYYY;
+        userInfo.SHTM_FG = schoolResult.SHTM_FG;
+      }
     }
 
     return {
       userInfo,
-      cookies: this.mergeCookies(mergedCookies, schoolInfoCookies),
     };
   }
 }
