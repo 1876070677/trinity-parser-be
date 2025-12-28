@@ -35,6 +35,7 @@ export class ApiGatewayController {
       'management.login',
       'management.logout',
       'management.validateSession',
+      'management.getShtmYyyy',
       'management.setShtmYyyy',
     ];
     const parsingTopics = ['parsing.subjectInfo'];
@@ -236,6 +237,39 @@ export class ApiGatewayController {
     } else {
       res.status(401).json({ success: false, message: result.message });
     }
+  }
+
+  // shtm, yyyy 조회 (관리자 전용)
+  @Get('api/mng/shtmYyyy')
+  async getShtmYyyy(@Req() req: Request, @Res() res: Response): Promise<void> {
+    const reqCookies = (req.cookies ?? {}) as Record<string, string>;
+    const sessionId = reqCookies['mng_session'] ?? '';
+
+    if (!sessionId) {
+      res.status(401).json({ success: false, message: 'Not authenticated' });
+      return;
+    }
+
+    const { valid } = await lastValueFrom(
+      this.managementClient.send<{ valid: boolean }>(
+        'management.validateSession',
+        { sessionId },
+      ),
+    );
+
+    if (!valid) {
+      res.status(401).json({ success: false, message: 'Invalid session' });
+      return;
+    }
+
+    const result = await lastValueFrom(
+      this.managementClient.send<{ shtm: string | null; yyyy: string | null }>(
+        'management.getShtmYyyy',
+        {},
+      ),
+    );
+
+    res.json({ success: true, ...result });
   }
 
   // shtm, yyyy 설정 (관리자 전용)

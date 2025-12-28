@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Trinity Parser Admin</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background-color: #f5f5f5;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .container {
+      background: white;
+      padding: 40px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      width: 100%;
+      max-width: 400px;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 30px;
+      color: #333;
+      font-size: 24px;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      color: #555;
+      font-weight: 500;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+
+    input:focus, select:focus {
+      outline: none;
+      border-color: #007bff;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    button:disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
+    }
+
+    .btn-logout {
+      background-color: #dc3545;
+      margin-top: 20px;
+    }
+
+    .btn-logout:hover {
+      background-color: #c82333;
+    }
+
+    .message {
+      padding: 10px;
+      border-radius: 4px;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    .message.success {
+      background-color: #d4edda;
+      color: #155724;
+    }
+
+    .message.error {
+      background-color: #f8d7da;
+      color: #721c24;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .current-settings {
+      background-color: #e9ecef;
+      padding: 15px;
+      border-radius: 4px;
+      margin-bottom: 20px;
+    }
+
+    .current-settings p {
+      margin: 5px 0;
+      color: #495057;
+    }
+
+    .current-settings strong {
+      color: #212529;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Login Section -->
+    <div id="loginSection">
+      <h1>Admin Login</h1>
+      <div id="loginMessage" class="message hidden"></div>
+      <form id="loginForm">
+        <div class="form-group">
+          <label for="id">ID</label>
+          <input type="text" id="id" name="id" required>
+        </div>
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input type="password" id="password" name="password" required>
+        </div>
+        <button type="submit">Login</button>
+      </form>
+    </div>
+
+    <!-- Settings Section -->
+    <div id="settingsSection" class="hidden">
+      <h1>Settings</h1>
+      <div id="settingsMessage" class="message hidden"></div>
+
+      <div class="current-settings">
+        <p><strong>Current Settings</strong></p>
+        <p>Year: <span id="currentYyyy">-</span></p>
+        <p>Semester: <span id="currentShtm">-</span></p>
+      </div>
+
+      <form id="settingsForm">
+        <div class="form-group">
+          <label for="yyyy">Year (yyyy)</label>
+          <input type="text" id="yyyy" name="yyyy" placeholder="2025" pattern="\d{4}" required>
+        </div>
+        <div class="form-group">
+          <label for="shtm">Semester (shtm)</label>
+          <select id="shtm" name="shtm" required>
+            <option value="">Select Semester</option>
+            <option value="10">1학기 (10)</option>
+            <option value="15">여름계절 (15)</option>
+            <option value="20">2학기 (20)</option>
+            <option value="25">겨울계절 (25)</option>
+          </select>
+        </div>
+        <button type="submit">Save Settings</button>
+      </form>
+      <button type="button" class="btn-logout" id="logoutBtn">Logout</button>
+    </div>
+  </div>
+
+  <script>
+    const loginSection = document.getElementById('loginSection');
+    const settingsSection = document.getElementById('settingsSection');
+    const loginForm = document.getElementById('loginForm');
+    const settingsForm = document.getElementById('settingsForm');
+    const logoutBtn = document.getElementById('logoutBtn');
+    const loginMessage = document.getElementById('loginMessage');
+    const settingsMessage = document.getElementById('settingsMessage');
+
+    function showMessage(element, message, isError = false) {
+      element.textContent = message;
+      element.className = `message ${isError ? 'error' : 'success'}`;
+      element.classList.remove('hidden');
+      setTimeout(() => element.classList.add('hidden'), 3000);
+    }
+
+    function showSettings() {
+      loginSection.classList.add('hidden');
+      settingsSection.classList.remove('hidden');
+      loadCurrentSettings();
+    }
+
+    function showLogin() {
+      settingsSection.classList.add('hidden');
+      loginSection.classList.remove('hidden');
+    }
+
+    async function loadCurrentSettings() {
+      try {
+        const response = await fetch('/api/mng/shtmYyyy');
+        const data = await response.json();
+        if (data.success) {
+          document.getElementById('currentYyyy').textContent = data.yyyy || '-';
+          document.getElementById('currentShtm').textContent = data.shtm || '-';
+        }
+      } catch (error) {
+        console.error('Failed to load settings:', error);
+      }
+    }
+
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const id = document.getElementById('id').value;
+      const password = document.getElementById('password').value;
+
+      try {
+        const response = await fetch('/api/mng/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id, password })
+        });
+
+        const data = await response.json();
+        if (data.success) {
+          showMessage(loginMessage, 'Login successful!');
+          setTimeout(showSettings, 500);
+        } else {
+          showMessage(loginMessage, data.message || 'Login failed', true);
+        }
+      } catch (error) {
+        showMessage(loginMessage, 'Network error', true);
+      }
+    });
+
+    settingsForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const yyyy = document.getElementById('yyyy').value;
+      const shtm = document.getElementById('shtm').value;
+
+      try {
+        const response = await fetch('/api/mng/shtmYyyy', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ yyyy, shtm })
+        });
+
+        const data = await response.json();
+        if (data.success) {
+          showMessage(settingsMessage, 'Settings saved!');
+          loadCurrentSettings();
+        } else {
+          showMessage(settingsMessage, data.message || 'Failed to save', true);
+        }
+      } catch (error) {
+        showMessage(settingsMessage, 'Network error', true);
+      }
+    });
+
+    logoutBtn.addEventListener('click', async () => {
+      try {
+        await fetch('/api/mng/logout', { method: 'POST' });
+        showLogin();
+      } catch (error) {
+        console.error('Logout error:', error);
+        showLogin();
+      }
+    });
+  </script>
+</body>
+</html>
