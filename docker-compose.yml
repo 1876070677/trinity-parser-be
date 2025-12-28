@@ -42,6 +42,24 @@ services:
       timeout: 3s
       retries: 5
 
+  postgres:
+    image: postgres:16-alpine
+    container_name: postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: trinity
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
   api-gateway:
     build:
       context: .
@@ -101,5 +119,26 @@ services:
       kafka:
         condition: service_healthy
 
+  board-service:
+    build:
+      context: .
+      args:
+        APP_NAME: board-service
+    container_name: board-service
+    restart: unless-stopped
+    environment:
+      KAFKA_BROKER: kafka:29092
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+      DB_NAME: trinity
+    depends_on:
+      kafka:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+
 volumes:
   redis-data:
+  postgres-data:

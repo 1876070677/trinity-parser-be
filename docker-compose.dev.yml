@@ -42,6 +42,22 @@ services:
       timeout: 3s
       retries: 5
 
+  postgres:
+    image: postgres:16-alpine
+    container_name: postgres-dev
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: trinity
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
   kafka-init:
     image: confluentinc/cp-kafka:7.5.0
     container_name: kafka-init-dev
@@ -142,4 +158,31 @@ services:
     depends_on:
       kafka-init:
         condition: service_completed_successfully
+    restart: unless-stopped
+
+  board-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+      args:
+        APP_NAME: board-service
+    container_name: board-service-dev
+    environment:
+      KAFKA_BROKER: kafka:29092
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+      DB_NAME: trinity
+    volumes:
+      - ./apps/board-service:/app/apps/board-service
+      - ./libs:/app/libs
+      - ./tsconfig.json:/app/tsconfig.json
+      - ./tsconfig.build.json:/app/tsconfig.build.json
+      - ./nest-cli.json:/app/nest-cli.json
+    depends_on:
+      kafka-init:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
     restart: unless-stopped

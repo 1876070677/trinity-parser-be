@@ -69,6 +69,27 @@ import { ApiGatewayService } from './api-gateway.service';
           },
         },
       },
+      {
+        name: 'BOARD_SERVICE',
+        transport: Transport.KAFKA,
+        options: {
+          client: {
+            clientId: 'api-gateway-board',
+            brokers: [process.env.KAFKA_BROKER ?? 'localhost:9092'],
+            retry: {
+              initialRetryTime: 1000,
+              retries: 10,
+            },
+          },
+          consumer: {
+            groupId: 'api-gateway-board-consumer',
+            retry: {
+              initialRetryTime: 1000,
+              retries: 10,
+            },
+          },
+        },
+      },
     ]),
   ],
   controllers: [ApiGatewayController],

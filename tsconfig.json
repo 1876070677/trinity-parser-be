@@ -23,6 +23,9 @@
     "paths": {
       "@libs/types": [
         "libs/types/index.ts"
+      ],
+      "@libs/dto": [
+        "libs/dto/index.ts"
       ]
     }
   },

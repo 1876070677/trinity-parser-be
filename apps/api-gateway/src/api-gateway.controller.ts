@@ -12,6 +12,7 @@ import {
   GradeResponse,
 } from '@libs/types';
 import { ApiGatewayService } from './api-gateway.service';
+import { CreatePostDto } from '@libs/dto';
 
 @Controller()
 export class ApiGatewayController {
@@ -21,6 +22,7 @@ export class ApiGatewayController {
     @Inject('MANAGEMENT_SERVICE')
     private readonly managementClient: ClientKafka,
     @Inject('PARSING_SERVICE') private readonly parsingClient: ClientKafka,
+    @Inject('BOARD_SERVICE') private readonly boardClient: ClientKafka,
   ) {}
 
   async onModuleInit() {
@@ -40,7 +42,13 @@ export class ApiGatewayController {
       'management.setShtmYyyy',
     ];
     const parsingTopics = ['parsing.subjectInfo', 'parsing.grade'];
-    const allTopics = [...userTopics, ...managementTopics, ...parsingTopics];
+    const boardTopics = ['board.createPost'];
+    const allTopics = [
+      ...userTopics,
+      ...managementTopics,
+      ...parsingTopics,
+      ...boardTopics,
+    ];
 
     // Kafka admin으로 reply 토픽 생성
     const kafka = new Kafka({
@@ -82,9 +90,13 @@ export class ApiGatewayController {
     parsingTopics.forEach((topic) =>
       this.parsingClient.subscribeToResponseOf(topic),
     );
+    boardTopics.forEach((topic) =>
+      this.boardClient.subscribeToResponseOf(topic),
+    );
     await this.userClient.connect();
     await this.managementClient.connect();
     await this.parsingClient.connect();
+    await this.boardClient.connect();
   }
 
   @Get()
@@ -390,6 +402,25 @@ export class ApiGatewayController {
     );
 
     res.json({ success: true, grades: result.grades });
+  }
+
+  // 게시글 작성
+  @Post('api/vl/post')
+  async createPost(
+    @Body() body: CreatePostDto,
+    @Res() res: Response,
+  ): Promise<void> {
+    const result = await lastValueFrom(
+      this.boardClient.send<{ success: boolean; id?: string }>(
+        'board.createPost',
+        {
+          stdNo: body.stdNo,
+          content: body.content,
+        },
+      ),
+    );
+
+    res.json(result);
   }
 
   // samlRequest, samlResponse, csrf를 제외한 쿠키 추출
