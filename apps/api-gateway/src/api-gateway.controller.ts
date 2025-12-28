@@ -9,6 +9,7 @@ import {
   LoginResponse,
   UserInfoResponse,
   SubjectInfoResponse,
+  GradeResponse,
 } from '@libs/types';
 import { ApiGatewayService } from './api-gateway.service';
 
@@ -38,7 +39,7 @@ export class ApiGatewayController {
       'management.getShtmYyyy',
       'management.setShtmYyyy',
     ];
-    const parsingTopics = ['parsing.subjectInfo'];
+    const parsingTopics = ['parsing.subjectInfo', 'parsing.grade'];
     const allTopics = [...userTopics, ...managementTopics, ...parsingTopics];
 
     // Kafka admin으로 reply 토픽 생성
@@ -358,6 +359,37 @@ export class ApiGatewayController {
     );
 
     res.json({ success: true, subjectInfo: result });
+  }
+
+  // 성적 조회
+  @Post('api/parsing/grade')
+  async getGrades(
+    @Req() req: Request,
+    @Body()
+    body: {
+      campFg: string;
+      shtmYyyy: string;
+      shtmFg: string;
+      stdNo: string;
+    },
+    @Res() res: Response,
+  ): Promise<void> {
+    const reqCookies = (req.cookies ?? {}) as Record<string, string>;
+    const csrf = reqCookies['csrf'] ?? '';
+    const cookies = this.extractSchoolCookies(reqCookies);
+
+    const result = await lastValueFrom(
+      this.parsingClient.send<GradeResponse>('parsing.grade', {
+        csrf,
+        cookies,
+        campFg: body.campFg,
+        shtmYyyy: body.shtmYyyy,
+        shtmFg: body.shtmFg,
+        stdNo: body.stdNo,
+      }),
+    );
+
+    res.json({ success: true, grades: result.grades });
   }
 
   // samlRequest, samlResponse, csrf를 제외한 쿠키 추출

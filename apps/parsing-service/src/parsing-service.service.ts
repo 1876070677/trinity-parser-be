@@ -1,5 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import { SubjectInfoRequest, SubjectInfoResponse } from '@libs/types';
+import {
+  SubjectInfoRequest,
+  SubjectInfoResponse,
+  GradeRequest,
+  GradeResponse,
+  CurrentGradeInfo,
+} from '@libs/types';
 
 @Injectable()
 export class ParsingServiceService {
@@ -143,5 +149,85 @@ export class ParsingServiceService {
     }
 
     return '-';
+  }
+
+  async getGrades(data: GradeRequest): Promise<GradeResponse> {
+    if (!data.shtmFg) {
+      throw new Error('휴학생 또는 졸업생의 경우, 조회가 불가능합니다.');
+    }
+
+    const formBody = new URLSearchParams({
+      campFg: data.campFg,
+      tlsnYyyy: data.shtmYyyy,
+      tlsnShtm: data.shtmFg,
+      stdNo: data.stdNo,
+    });
+
+    const response = await fetch(
+      'https://uportal.catholic.ac.kr/stw/scsr/ssco/findSninLectureScore.json',
+      {
+        method: 'POST',
+        headers: {
+          'User-Agent':
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:72.0) Gecko/20100101 Firefox/72.0',
+          Accept: 'application/json, text/javascript, */*; q=0.01',
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'x-csrf-token': data.csrf,
+          'x-requested-with': 'XMLHttpRequest',
+          'Accept-Encoding': 'gzip, deflate, br, zstd',
+          'Accept-Language': 'ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7',
+          Host: 'uportal.catholic.ac.kr',
+          Origin: 'https://uportal.catholic.ac.kr',
+          Referer:
+            'https://uportal.catholic.ac.kr/stw/scsr/ssco/sscoSemesterGradesInq.do',
+          Cookie: data.cookies.join('; '),
+        },
+        body: formBody.toString(),
+      },
+    );
+
+    if (!response.ok) {
+      throw new Error('성적 정보 조회에 실패했습니다.');
+    }
+
+    const jsonData = (await response.json()) as {
+      DS_COUR_TALA010?: Array<Record<string, unknown>>;
+      [key: string]: unknown;
+    };
+
+    const scores = jsonData.DS_COUR_TALA010 || [];
+    const grades: CurrentGradeInfo[] = [];
+
+    for (const score of scores) {
+      const gradeInfo: CurrentGradeInfo = {
+        details: [],
+      };
+
+      for (const [key, value] of Object.entries(score)) {
+        if (
+          value != null &&
+          (typeof value === 'string' || typeof value === 'number')
+        ) {
+          const strValue = String(value);
+          if (key.includes('apprItem')) {
+            gradeInfo.details.push(strValue);
+          } else if (key.includes('centesScorAdm')) {
+            gradeInfo.centesScorAdm = strValue;
+          } else if (key.includes('estiYn')) {
+            gradeInfo.estiYn = strValue;
+          } else if (key.includes('grdAdm')) {
+            gradeInfo.grdAdm = strValue;
+          } else if (key.includes('sbjtKorNm')) {
+            gradeInfo.sbjtKorNm = strValue;
+          } else if (key.includes('sbjtNo')) {
+            gradeInfo.sbjtNo = strValue;
+          }
+        }
+      }
+
+      grades.push(gradeInfo);
+    }
+
+    return { grades };
   }
 }

@@ -1,12 +1,12 @@
 import { Controller, OnModuleInit } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { Kafka } from 'kafkajs';
-import { SubjectInfoRequest } from '@libs/types';
+import { SubjectInfoRequest, GradeRequest } from '@libs/types';
 import { ParsingServiceService } from './parsing-service.service';
 
 @Controller()
 export class ParsingServiceController implements OnModuleInit {
-  private readonly topics = ['parsing.subjectInfo'];
+  private readonly topics = ['parsing.subjectInfo', 'parsing.grade'];
 
   constructor(private readonly parsingServiceService: ParsingServiceService) {}
 
@@ -43,5 +43,10 @@ export class ParsingServiceController implements OnModuleInit {
   @MessagePattern('parsing.subjectInfo')
   async getSubjectInfo(@Payload() data: SubjectInfoRequest) {
     return this.parsingServiceService.getSubjectInfo(data);
+  }
+
+  @MessagePattern('parsing.grade')
+  async getGrades(@Payload() data: GradeRequest) {
+    return this.parsingServiceService.getGrades(data);
   }
 }

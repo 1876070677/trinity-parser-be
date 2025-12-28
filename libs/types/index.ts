@@ -72,3 +72,26 @@ export interface TrinityInfo {
 export interface UserInfoResponse {
   userInfo: TrinityInfo;
 }
+
+// 성적 조회 관련 타입
+export interface GradeRequest {
+  csrf: string;
+  cookies: string[];
+  campFg: string;
+  shtmYyyy: string;
+  shtmFg: string;
+  stdNo: string;
+}
+
+export interface CurrentGradeInfo {
+  sbjtNo?: string;
+  sbjtKorNm?: string;
+  centesScorAdm?: string;
+  estiYn?: string;
+  grdAdm?: string;
+  details: string[];
+}
+
+export interface GradeResponse {
+  grades: CurrentGradeInfo[];
+}
