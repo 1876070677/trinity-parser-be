@@ -1,4 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import {
+  Injectable,
+  BadGatewayException,
+  BadRequestException,
+  ForbiddenException,
+} from '@nestjs/common';
 import {
   SubjectInfoRequest,
   SubjectInfoResponse,
@@ -46,7 +51,7 @@ export class ParsingServiceService {
     );
 
     if (!response.ok) {
-      throw new Error('과목 정보 조회에 실패했습니다.');
+      throw new BadGatewayException('학교 서버 응답 오류');
     }
 
     const jsonData = (await response.json()) as {
@@ -84,7 +89,7 @@ export class ParsingServiceService {
       }
     }
 
-    throw new Error('과목 코드 또는 분반이 유효하지 않습니다.');
+    throw new BadRequestException('과목 코드 또는 분반이 유효하지 않습니다.');
   }
 
   private async getRemainNo(
@@ -127,7 +132,7 @@ export class ParsingServiceService {
     );
 
     if (!response.ok) {
-      throw new Error('여석 정보 조회에 실패했습니다.');
+      throw new BadGatewayException('학교 서버 응답 오류');
     }
 
     const jsonData = (await response.json()) as {
@@ -153,7 +158,9 @@ export class ParsingServiceService {
 
   async getGrades(data: GradeRequest): Promise<GradeResponse> {
     if (!data.shtmFg) {
-      throw new Error('휴학생 또는 졸업생의 경우, 조회가 불가능합니다.');
+      throw new ForbiddenException(
+        '휴학생 또는 졸업생의 경우, 조회가 불가능합니다.',
+      );
     }
 
     const formBody = new URLSearchParams({
@@ -187,7 +194,7 @@ export class ParsingServiceService {
     );
 
     if (!response.ok) {
-      throw new Error('성적 정보 조회에 실패했습니다.');
+      throw new BadGatewayException('학교 서버 응답 오류');
     }
 
     const jsonData = (await response.json()) as {
