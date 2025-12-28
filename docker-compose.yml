@@ -88,5 +88,18 @@ services:
       redis:
         condition: service_healthy
 
+  parsing-service:
+    build:
+      context: .
+      args:
+        APP_NAME: parsing-service
+    container_name: parsing-service
+    restart: unless-stopped
+    environment:
+      KAFKA_BROKER: kafka:29092
+    depends_on:
+      kafka:
+        condition: service_healthy
+
 volumes:
   redis-data:

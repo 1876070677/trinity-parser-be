@@ -123,3 +123,23 @@ services:
       redis:
         condition: service_healthy
     restart: unless-stopped
+
+  parsing-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+      args:
+        APP_NAME: parsing-service
+    container_name: parsing-service-dev
+    environment:
+      KAFKA_BROKER: kafka:29092
+    volumes:
+      - ./apps/parsing-service:/app/apps/parsing-service
+      - ./libs:/app/libs
+      - ./tsconfig.json:/app/tsconfig.json
+      - ./tsconfig.build.json:/app/tsconfig.build.json
+      - ./nest-cli.json:/app/nest-cli.json
+    depends_on:
+      kafka-init:
+        condition: service_completed_successfully
+    restart: unless-stopped

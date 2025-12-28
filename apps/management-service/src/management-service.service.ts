@@ -11,6 +11,8 @@ export class ManagementServiceService implements OnModuleInit, OnModuleDestroy {
   private readonly ADMIN_PW_KEY = 'admin_pw';
   private readonly SESSION_PREFIX = 'mng:session:';
   private readonly SESSION_TTL = 60 * 60 * 24; // 24시간
+  private readonly SHTM_KEY = 'shtm';
+  private readonly YYYY_KEY = 'yyyy';
 
   async onModuleInit() {
     this.redis = new Redis({
@@ -94,5 +96,18 @@ export class ManagementServiceService implements OnModuleInit, OnModuleDestroy {
     const sessionKey = `${this.SESSION_PREFIX}${sessionId}`;
     const exists = await this.redis.exists(sessionKey);
     return exists === 1;
+  }
+
+  async getShtmYyyy(): Promise<{ shtm: string | null; yyyy: string | null }> {
+    const shtm = await this.redis.get(this.SHTM_KEY);
+    const yyyy = await this.redis.get(this.YYYY_KEY);
+    return { shtm, yyyy };
+  }
+
+  async setShtmYyyy(shtm: string, yyyy: string): Promise<{ success: boolean }> {
+    await this.redis.set(this.SHTM_KEY, shtm);
+    await this.redis.set(this.YYYY_KEY, yyyy);
+    console.log(`Set shtm: ${shtm}, yyyy: ${yyyy}`);
+    return { success: true };
   }
 }

@@ -37,6 +37,27 @@ export interface UserInfoData {
   cookies: string[];
 }
 
+// 파싱 서비스 관련 타입
+export interface SubjectInfoRequest {
+  csrf: string;
+  cookies: string[];
+  sujtNo: string;
+  classNo: string;
+  campFg: string;
+  shtm: string;
+  yyyy: string;
+}
+
+export interface SubjectInfoResponse {
+  sbjtKorNm: string;
+  sujtNo: string;
+  classNo: string;
+  tlsnAplyRcnt: string;
+  tlsnLmtRcnt: string;
+  sustCd: string;
+  extraCnt: string;
+}
+
 export interface TrinityInfo {
   userNm?: string;
   userNo?: string;
@@ -44,6 +65,8 @@ export interface TrinityInfo {
   campFg?: string;
   shtmYyyy?: string;
   SHTM_FG?: string;
+  shtm?: string;
+  yyyy?: string;
 }
 
 export interface UserInfoResponse {

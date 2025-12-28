@@ -11,6 +11,8 @@ export class ManagementServiceController implements OnModuleInit {
     'management.login',
     'management.logout',
     'management.validateSession',
+    'management.getShtmYyyy',
+    'management.setShtmYyyy',
   ];
 
   constructor(
@@ -83,5 +85,23 @@ export class ManagementServiceController implements OnModuleInit {
       data.sessionId,
     );
     return { valid };
+  }
+
+  // shtm, yyyy 조회
+  @MessagePattern('management.getShtmYyyy')
+  async getShtmYyyy(): Promise<{ shtm: string | null; yyyy: string | null }> {
+    return await this.managementServiceService.getShtmYyyy();
+  }
+
+  // shtm, yyyy 설정
+  @MessagePattern('management.setShtmYyyy')
+  async setShtmYyyy(data: {
+    shtm: string;
+    yyyy: string;
+  }): Promise<{ success: boolean }> {
+    return await this.managementServiceService.setShtmYyyy(
+      data.shtm,
+      data.yyyy,
+    );
   }
 }

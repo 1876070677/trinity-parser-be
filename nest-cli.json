@@ -31,6 +31,15 @@
         "tsConfigPath": "apps/management-service/tsconfig.app.json"
       }
     },
+    "parsing-service": {
+      "type": "application",
+      "root": "apps/parsing-service",
+      "entryFile": "main",
+      "sourceRoot": "apps/parsing-service/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/parsing-service/tsconfig.app.json"
+      }
+    },
     "user-service": {
       "type": "application",
       "root": "apps/user-service",

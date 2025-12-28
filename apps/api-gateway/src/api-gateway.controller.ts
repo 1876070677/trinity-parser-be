@@ -8,6 +8,7 @@ import {
   LoginFormResponse,
   LoginResponse,
   UserInfoResponse,
+  SubjectInfoResponse,
 } from '@libs/types';
 import { ApiGatewayService } from './api-gateway.service';
 
@@ -18,6 +19,7 @@ export class ApiGatewayController {
     @Inject('USER_SERVICE') private readonly userClient: ClientKafka,
     @Inject('MANAGEMENT_SERVICE')
     private readonly managementClient: ClientKafka,
+    @Inject('PARSING_SERVICE') private readonly parsingClient: ClientKafka,
   ) {}
 
   async onModuleInit() {
@@ -33,8 +35,10 @@ export class ApiGatewayController {
       'management.login',
       'management.logout',
       'management.validateSession',
+      'management.setShtmYyyy',
     ];
-    const allTopics = [...userTopics, ...managementTopics];
+    const parsingTopics = ['parsing.subjectInfo'];
+    const allTopics = [...userTopics, ...managementTopics, ...parsingTopics];
 
     // Kafka admin으로 reply 토픽 생성
     const kafka = new Kafka({
@@ -73,8 +77,12 @@ export class ApiGatewayController {
     managementTopics.forEach((topic) =>
       this.managementClient.subscribeToResponseOf(topic),
     );
+    parsingTopics.forEach((topic) =>
+      this.parsingClient.subscribeToResponseOf(topic),
+    );
     await this.userClient.connect();
     await this.managementClient.connect();
+    await this.parsingClient.connect();
   }
 
   @Get()
@@ -230,6 +238,43 @@ export class ApiGatewayController {
     }
   }
 
+  // shtm, yyyy 설정 (관리자 전용)
+  @Post('api/mng/shtmYyyy')
+  async setShtmYyyy(
+    @Req() req: Request,
+    @Body() body: { shtm: string; yyyy: string },
+    @Res() res: Response,
+  ): Promise<void> {
+    const reqCookies = (req.cookies ?? {}) as Record<string, string>;
+    const sessionId = reqCookies['mng_session'] ?? '';
+
+    if (!sessionId) {
+      res.status(401).json({ success: false, message: 'Not authenticated' });
+      return;
+    }
+
+    const { valid } = await lastValueFrom(
+      this.managementClient.send<{ valid: boolean }>(
+        'management.validateSession',
+        { sessionId },
+      ),
+    );
+
+    if (!valid) {
+      res.status(401).json({ success: false, message: 'Invalid session' });
+      return;
+    }
+
+    const result = await lastValueFrom(
+      this.managementClient.send<{ success: boolean }>(
+        'management.setShtmYyyy',
+        { shtm: body.shtm, yyyy: body.yyyy },
+      ),
+    );
+
+    res.json(result);
+  }
+
   // 관리자 로그아웃
   @Post('api/mng/logout')
   async mngLogout(@Req() req: Request, @Res() res: Response): Promise<void> {
@@ -246,6 +291,39 @@ export class ApiGatewayController {
 
     res.clearCookie('mng_session');
     res.json({ success: true });
+  }
+
+  // 과목 정보 조회
+  @Post('api/parsing/subjectInfo')
+  async getSubjectInfo(
+    @Req() req: Request,
+    @Body()
+    body: {
+      sujtNo: string;
+      classNo: string;
+      campFg: string;
+      shtm: string;
+      yyyy: string;
+    },
+    @Res() res: Response,
+  ): Promise<void> {
+    const reqCookies = (req.cookies ?? {}) as Record<string, string>;
+    const csrf = reqCookies['csrf'] ?? '';
+    const cookies = this.extractSchoolCookies(reqCookies);
+
+    const result = await lastValueFrom(
+      this.parsingClient.send<SubjectInfoResponse>('parsing.subjectInfo', {
+        csrf,
+        cookies,
+        sujtNo: body.sujtNo,
+        classNo: body.classNo,
+        campFg: body.campFg,
+        shtm: body.shtm,
+        yyyy: body.yyyy,
+      }),
+    );
+
+    res.json({ success: true, subjectInfo: result });
   }
 
   // samlRequest, samlResponse, csrf를 제외한 쿠키 추출

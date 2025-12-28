@@ -49,7 +49,8 @@ export class UserServiceController implements OnModuleInit {
     }
     await admin.disconnect();
 
-    // Management Service 연결
+    // Management Service 응답 토픽 구독 및 연결
+    this.managementClient.subscribeToResponseOf('management.getShtmYyyy');
     await this.managementClient.connect();
   }
 
@@ -85,6 +86,28 @@ export class UserServiceController implements OnModuleInit {
   // 5단계: 사용자 정보 조회
   @MessagePattern('user.userInfo')
   async getUserInfo(@Payload() data: UserInfoData) {
-    return this.userServiceService.getUserInfo(data);
+    const result = await this.userServiceService.getUserInfo(data);
+
+    // management-service에서 shtm, yyyy 조회
+    const shtmYyyy = await new Promise<{
+      shtm: string | null;
+      yyyy: string | null;
+    }>((resolve) => {
+      this.managementClient.send('management.getShtmYyyy', {}).subscribe({
+        next: (value: { shtm: string | null; yyyy: string | null }) =>
+          resolve(value),
+        error: () => resolve({ shtm: null, yyyy: null }),
+      });
+    });
+
+    // userInfo에 shtm, yyyy 추가
+    if (shtmYyyy.shtm) {
+      result.userInfo.shtm = shtmYyyy.shtm;
+    }
+    if (shtmYyyy.yyyy) {
+      result.userInfo.yyyy = shtmYyyy.yyyy;
+    }
+
+    return result;
   }
 }
