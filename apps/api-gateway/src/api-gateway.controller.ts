@@ -1,4 +1,13 @@
-import { Body, Controller, Get, Inject, Post, Res, Req } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Inject,
+  Post,
+  Res,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { ClientKafka } from '@nestjs/microservices';
 import type { Request, Response } from 'express';
 import { Kafka } from 'kafkajs';
@@ -11,6 +20,7 @@ import {
   SubjectInfoResponse,
   GradeResponse,
 } from '@libs/types';
+import { AuthGuard } from '@libs/auth';
 import { ApiGatewayService } from './api-gateway.service';
 import { CreatePostDto } from '@libs/dto';
 
@@ -175,7 +185,7 @@ export class ApiGatewayController {
     res.clearCookie('samlRequest');
     res.clearCookie('samlResponse');
 
-    res.json({ success: true, csrf: result.csrf });
+    res.json({ success: true, accessToken: result.accessToken });
   }
 
   // 4단계: 로그아웃
@@ -405,6 +415,7 @@ export class ApiGatewayController {
   }
 
   // 게시글 작성
+  @UseGuards(AuthGuard)
   @Post('api/vl/post')
   async createPost(
     @Body() body: CreatePostDto,
@@ -424,6 +435,7 @@ export class ApiGatewayController {
   }
 
   // 게시글 좋아요
+  @UseGuards(AuthGuard)
   @Post('api/vl/like')
   async likePost(
     @Body() body: { id: string },

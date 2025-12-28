@@ -1,10 +1,12 @@
 import { Module } from '@nestjs/common';
 import { ClientsModule, Transport } from '@nestjs/microservices';
+import { AuthModule } from '@libs/auth';
 import { ApiGatewayController } from './api-gateway.controller';
 import { ApiGatewayService } from './api-gateway.service';
 
 @Module({
   imports: [
+    AuthModule,
     ClientsModule.register([
       {
         name: 'USER_SERVICE',

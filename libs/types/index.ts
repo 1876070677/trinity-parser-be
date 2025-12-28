@@ -24,6 +24,7 @@ export interface AuthResponse {
 export interface LoginResponse {
   csrf: string;
   cookies: string[];
+  accessToken: string;
 }
 
 export interface LogoutData {

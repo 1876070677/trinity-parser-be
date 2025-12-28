@@ -2,6 +2,7 @@ import { Controller, Inject, OnModuleInit } from '@nestjs/common';
 import { ClientKafka, MessagePattern, Payload } from '@nestjs/microservices';
 import { Kafka } from 'kafkajs';
 import { AuthData, LoginData, LogoutData, UserInfoData } from '@libs/types';
+import { AuthService } from '@libs/auth';
 import { UserServiceService } from './user-service.service';
 
 @Controller()
@@ -16,6 +17,7 @@ export class UserServiceController implements OnModuleInit {
 
   constructor(
     private readonly userServiceService: UserServiceService,
+    private readonly authService: AuthService,
     @Inject('MANAGEMENT_SERVICE')
     private readonly managementClient: ClientKafka,
   ) {}
@@ -66,15 +68,18 @@ export class UserServiceController implements OnModuleInit {
     return this.userServiceService.auth(data);
   }
 
-  // 3단계: SAMLResponse로 csrf 토큰 획득
+  // 3단계: SAMLResponse로 csrf 토큰 획득 + JWT 발급
   @MessagePattern('user.login')
   async login(@Payload() data: LoginData) {
     const result = await this.userServiceService.login(data);
 
+    // JWT 토큰 발급 (csrf를 payload에 담음)
+    const accessToken = this.authService.generateToken(result.csrf);
+
     // 로그인 성공 시 이벤트 발행 (fire-and-forget)
     this.managementClient.emit('management.loginSuccess', {});
 
-    return result;
+    return { ...result, accessToken };
   }
 
   // 4단계: 로그아웃

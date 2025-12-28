@@ -1,10 +1,12 @@
 import { Module } from '@nestjs/common';
 import { ClientsModule, Transport } from '@nestjs/microservices';
+import { AuthModule } from '@libs/auth';
 import { UserServiceController } from './user-service.controller';
 import { UserServiceService } from './user-service.service';
 
 @Module({
   imports: [
+    AuthModule,
     ClientsModule.register([
       {
         name: 'MANAGEMENT_SERVICE',
