@@ -6,7 +6,7 @@ import { CreatePostDto } from '@libs/dto';
 
 @Controller()
 export class BoardServiceController implements OnModuleInit {
-  private readonly topics = ['board.createPost'];
+  private readonly topics = ['board.createPost', 'board.likePost'];
 
   constructor(private readonly boardServiceService: BoardServiceService) {}
 
@@ -45,5 +45,12 @@ export class BoardServiceController implements OnModuleInit {
     @Payload() data: CreatePostDto,
   ): Promise<{ success: boolean; id?: string }> {
     return this.boardServiceService.createPost(data);
+  }
+
+  @MessagePattern('board.likePost')
+  async likePost(
+    @Payload() data: { id: string },
+  ): Promise<{ success: boolean; likes?: number }> {
+    return this.boardServiceService.likePost(data.id);
   }
 }

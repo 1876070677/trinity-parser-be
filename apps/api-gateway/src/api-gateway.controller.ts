@@ -42,7 +42,7 @@ export class ApiGatewayController {
       'management.setShtmYyyy',
     ];
     const parsingTopics = ['parsing.subjectInfo', 'parsing.grade'];
-    const boardTopics = ['board.createPost'];
+    const boardTopics = ['board.createPost', 'board.likePost'];
     const allTopics = [
       ...userTopics,
       ...managementTopics,
@@ -417,6 +417,22 @@ export class ApiGatewayController {
           stdNo: body.stdNo,
           content: body.content,
         },
+      ),
+    );
+
+    res.json(result);
+  }
+
+  // 게시글 좋아요
+  @Post('api/vl/like')
+  async likePost(
+    @Body() body: { id: string },
+    @Res() res: Response,
+  ): Promise<void> {
+    const result = await lastValueFrom(
+      this.boardClient.send<{ success: boolean; likes?: number }>(
+        'board.likePost',
+        { id: body.id },
       ),
     );
 
