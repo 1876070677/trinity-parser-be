@@ -4,6 +4,7 @@ services:
   kafka:
     image: confluentinc/cp-kafka:7.5.0
     container_name: kafka-dev
+    restart: unless-stopped
     ports:
       - "9092:9092"
     environment:
@@ -32,6 +33,7 @@ services:
   redis:
     image: redis:7-alpine
     container_name: redis-dev
+    restart: unless-stopped
     ports:
       - "6379:6379"
     healthcheck:
@@ -43,6 +45,7 @@ services:
   kafka-init:
     image: confluentinc/cp-kafka:7.5.0
     container_name: kafka-init-dev
+    restart: on-failure
     depends_on:
       kafka:
         condition: service_healthy
@@ -75,7 +78,7 @@ services:
     depends_on:
       kafka-init:
         condition: service_completed_successfully
-    restart: on-failure
+    restart: unless-stopped
 
   user-service:
     build:
@@ -95,7 +98,7 @@ services:
     depends_on:
       kafka-init:
         condition: service_completed_successfully
-    restart: on-failure
+    restart: unless-stopped
 
   management-service:
     build:
@@ -119,4 +122,4 @@ services:
         condition: service_completed_successfully
       redis:
         condition: service_healthy
-    restart: on-failure
+    restart: unless-stopped

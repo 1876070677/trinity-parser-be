@@ -28,7 +28,12 @@ export class ApiGatewayController {
       'user.logout',
       'user.userInfo',
     ];
-    const managementTopics = ['management.getLoginCount'];
+    const managementTopics = [
+      'management.getLoginCount',
+      'management.login',
+      'management.logout',
+      'management.validateSession',
+    ];
     const allTopics = [...userTopics, ...managementTopics];
 
     // Kafka admin으로 reply 토픽 생성
@@ -201,6 +206,46 @@ export class ApiGatewayController {
     );
 
     return { success: true, count: result.count };
+  }
+
+  // 관리자 로그인
+  @Post('api/mng/login')
+  async mngLogin(
+    @Body() loginData: { id: string; password: string },
+    @Res() res: Response,
+  ): Promise<void> {
+    const result = await lastValueFrom(
+      this.managementClient.send<{
+        success: boolean;
+        sessionId?: string;
+        message?: string;
+      }>('management.login', loginData),
+    );
+
+    if (result.success && result.sessionId) {
+      res.cookie('mng_session', result.sessionId, { httpOnly: true });
+      res.json({ success: true });
+    } else {
+      res.status(401).json({ success: false, message: result.message });
+    }
+  }
+
+  // 관리자 로그아웃
+  @Post('api/mng/logout')
+  async mngLogout(@Req() req: Request, @Res() res: Response): Promise<void> {
+    const reqCookies = (req.cookies ?? {}) as Record<string, string>;
+    const sessionId = reqCookies['mng_session'] ?? '';
+
+    if (sessionId) {
+      await lastValueFrom(
+        this.managementClient.send<{ success: boolean }>('management.logout', {
+          sessionId,
+        }),
+      );
+    }
+
+    res.clearCookie('mng_session');
+    res.json({ success: true });
   }
 
   // samlRequest, samlResponse, csrf를 제외한 쿠키 추출

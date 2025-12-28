@@ -4,6 +4,7 @@ services:
   kafka:
     image: confluentinc/cp-kafka:7.5.0
     container_name: kafka
+    restart: unless-stopped
     ports:
       - "9092:9092"
     environment:
@@ -29,6 +30,7 @@ services:
   redis:
     image: redis:7-alpine
     container_name: redis
+    restart: unless-stopped
     ports:
       - "6379:6379"
     volumes:
@@ -46,6 +48,7 @@ services:
       args:
         APP_NAME: api-gateway
     container_name: api-gateway
+    restart: unless-stopped
     ports:
       - "3000:3000"
     environment:
@@ -61,6 +64,7 @@ services:
       args:
         APP_NAME: user-service
     container_name: user-service
+    restart: unless-stopped
     environment:
       KAFKA_BROKER: kafka:29092
     depends_on:
@@ -73,6 +77,7 @@ services:
       args:
         APP_NAME: management-service
     container_name: management-service
+    restart: unless-stopped
     environment:
       KAFKA_BROKER: kafka:29092
       REDIS_HOST: redis
