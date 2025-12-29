@@ -4,6 +4,7 @@ import {
   Get,
   Inject,
   Post,
+  Query,
   Res,
   Req,
   UseGuards,
@@ -22,7 +23,7 @@ import {
 } from '@libs/types';
 import { AuthGuard } from '@libs/auth';
 import { ApiGatewayService } from './api-gateway.service';
-import { CreatePostDto } from '@libs/dto';
+import { CreatePostDto, ListPostsDto, ListPostsResponseDto } from '@libs/dto';
 
 @Controller()
 export class ApiGatewayController {
@@ -52,7 +53,11 @@ export class ApiGatewayController {
       'management.setShtmYyyy',
     ];
     const parsingTopics = ['parsing.subjectInfo', 'parsing.grade'];
-    const boardTopics = ['board.createPost', 'board.likePost'];
+    const boardTopics = [
+      'board.createPost',
+      'board.likePost',
+      'board.listPosts',
+    ];
     const allTopics = [
       ...userTopics,
       ...managementTopics,
@@ -446,6 +451,20 @@ export class ApiGatewayController {
         'board.likePost',
         { id: body.id },
       ),
+    );
+
+    res.json(result);
+  }
+
+  // 게시글 목록 조회
+  @UseGuards(AuthGuard)
+  @Get('api/vl/post')
+  async listPosts(
+    @Query() query: ListPostsDto,
+    @Res() res: Response,
+  ): Promise<void> {
+    const result = await lastValueFrom(
+      this.boardClient.send<ListPostsResponseDto>('board.listPosts', query),
     );
 
     res.json(result);

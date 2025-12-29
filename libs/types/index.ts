@@ -21,9 +21,12 @@ export interface AuthResponse {
   cookies: string[];
 }
 
-export interface LoginResponse {
+export interface LoginResult {
   csrf: string;
   cookies: string[];
+}
+
+export interface LoginResponse extends LoginResult {
   accessToken: string;
 }
 

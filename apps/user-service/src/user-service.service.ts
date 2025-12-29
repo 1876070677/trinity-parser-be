@@ -4,7 +4,7 @@ import {
   AuthResponse,
   LoginData,
   LoginFormResponse,
-  LoginResponse,
+  LoginResult,
   LogoutData,
   TrinityInfo,
   UserInfoData,
@@ -118,7 +118,7 @@ export class UserServiceService {
   }
 
   // 3단계: SAMLResponse로 csrf 토큰 획득
-  async login(data: LoginData): Promise<LoginResponse> {
+  async login(data: LoginData): Promise<LoginResult> {
     const formBody = new URLSearchParams({
       SAMLResponse: data.samlResponse,
     });
