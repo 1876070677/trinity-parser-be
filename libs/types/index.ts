@@ -99,3 +99,10 @@ export interface CurrentGradeInfo {
 export interface GradeResponse {
   grades: CurrentGradeInfo[];
 }
+
+// 로깅 서비스 관련 타입
+export interface SubjectSearchLogRequest {
+  classKrName: string;
+  classId: string;
+  classNo: string;
+}

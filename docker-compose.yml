@@ -119,6 +119,21 @@ services:
       kafka:
         condition: service_healthy
 
+  logging-service:
+    build:
+      context: .
+      args:
+        APP_NAME: logging-service
+    container_name: logging-service
+    restart: unless-stopped
+    environment:
+      KAFKA_BROKER: kafka:29092
+    volumes:
+      - ./logs:/app/logs
+    depends_on:
+      kafka:
+        condition: service_healthy
+
   board-service:
     build:
       context: .

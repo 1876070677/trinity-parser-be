@@ -160,6 +160,27 @@ services:
         condition: service_completed_successfully
     restart: unless-stopped
 
+  logging-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+      args:
+        APP_NAME: logging-service
+    container_name: logging-service-dev
+    environment:
+      KAFKA_BROKER: kafka:29092
+    volumes:
+      - ./apps/logging-service:/app/apps/logging-service
+      - ./libs:/app/libs
+      - ./tsconfig.json:/app/tsconfig.json
+      - ./tsconfig.build.json:/app/tsconfig.build.json
+      - ./nest-cli.json:/app/nest-cli.json
+      - ./logs:/app/logs
+    depends_on:
+      kafka-init:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
   board-service:
     build:
       context: .

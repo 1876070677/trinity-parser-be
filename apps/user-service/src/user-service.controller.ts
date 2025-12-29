@@ -1,7 +1,13 @@
 import { Controller, Inject, OnModuleInit } from '@nestjs/common';
 import { ClientKafka, MessagePattern, Payload } from '@nestjs/microservices';
 import { Kafka } from 'kafkajs';
-import { AuthData, LoginData, LogoutData, UserInfoData } from '@libs/types';
+import {
+  AuthData,
+  LoginData,
+  LoginResponse,
+  LogoutData,
+  UserInfoData,
+} from '@libs/types';
 import { AuthService } from '@libs/auth';
 import { UserServiceService } from './user-service.service';
 
@@ -70,7 +76,7 @@ export class UserServiceController implements OnModuleInit {
 
   // 3단계: SAMLResponse로 csrf 토큰 획득 + JWT 발급
   @MessagePattern('user.login')
-  async login(@Payload() data: LoginData) {
+  async login(@Payload() data: LoginData): Promise<LoginResponse> {
     const result = await this.userServiceService.login(data);
 
     // JWT 토큰 발급 (csrf를 payload에 담음)

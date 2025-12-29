@@ -31,6 +31,15 @@
         "tsConfigPath": "apps/board-service/tsconfig.app.json"
       }
     },
+    "logging-service": {
+      "type": "application",
+      "root": "apps/logging-service",
+      "entryFile": "main",
+      "sourceRoot": "apps/logging-service/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/logging-service/tsconfig.app.json"
+      }
+    },
     "management-service": {
       "type": "application",
       "root": "apps/management-service",

@@ -21,14 +21,14 @@
     "strictBindCallApply": false,
     "noFallthroughCasesInSwitch": false,
     "paths": {
-      "@libs/types": [
-        "libs/types/index.ts"
+      "@libs/auth": [
+        "libs/auth/index.ts"
       ],
       "@libs/dto": [
         "libs/dto/index.ts"
       ],
-      "@libs/auth": [
-        "libs/auth/index.ts"
+      "@libs/types": [
+        "libs/types/index.ts"
       ]
     }
   },

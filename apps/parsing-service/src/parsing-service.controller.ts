@@ -1,5 +1,5 @@
-import { Controller, OnModuleInit } from '@nestjs/common';
-import { MessagePattern, Payload } from '@nestjs/microservices';
+import { Controller, Inject, OnModuleInit } from '@nestjs/common';
+import { ClientKafka, MessagePattern, Payload } from '@nestjs/microservices';
 import { Kafka } from 'kafkajs';
 import { SubjectInfoRequest, GradeRequest } from '@libs/types';
 import { ParsingServiceService } from './parsing-service.service';
@@ -8,7 +8,10 @@ import { ParsingServiceService } from './parsing-service.service';
 export class ParsingServiceController implements OnModuleInit {
   private readonly topics = ['parsing.subjectInfo', 'parsing.grade'];
 
-  constructor(private readonly parsingServiceService: ParsingServiceService) {}
+  constructor(
+    private readonly parsingServiceService: ParsingServiceService,
+    @Inject('LOGGING_SERVICE') private readonly loggingClient: ClientKafka,
+  ) {}
 
   async onModuleInit() {
     const kafka = new Kafka({
@@ -42,7 +45,16 @@ export class ParsingServiceController implements OnModuleInit {
 
   @MessagePattern('parsing.subjectInfo')
   async getSubjectInfo(@Payload() data: SubjectInfoRequest) {
-    return this.parsingServiceService.getSubjectInfo(data);
+    const result = await this.parsingServiceService.getSubjectInfo(data);
+
+    // 성공 시 logging-service로 로그 전송
+    this.loggingClient.emit('logging.subjectSearch', {
+      classKrName: result.sbjtKorNm,
+      classId: result.sujtNo,
+      classNo: result.classNo,
+    });
+
+    return result;
   }
 
   @MessagePattern('parsing.grade')
