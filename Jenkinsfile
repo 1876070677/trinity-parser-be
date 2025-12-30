@@ -64,10 +64,10 @@ pipeline {
                     docker exec trinity-kafka kafka-broker-api-versions --bootstrap-server localhost:9092 || exit 1
 
                     # Redis 상태 확인
-                    docker exec trinity-redis redis-cli ping || exit 1
+                    docker exec redis-trinity redis-cli ping || exit 1
 
                     # PostgreSQL 상태 확인
-                    docker exec trinity-postgres pg_isready || exit 1
+                    docker exec postgres-trinity pg_isready || exit 1
 
                     echo "All services are running!"
                 '''

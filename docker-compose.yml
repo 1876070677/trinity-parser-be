@@ -29,7 +29,7 @@ services:
 
   redis:
     image: redis:7-alpine
-    container_name: trinity-redis
+    container_name: redis-trinity
     restart: unless-stopped
     ports:
       - "${REDIS_PORT:-6380}:6379"
@@ -44,7 +44,7 @@ services:
 
   postgres:
     image: postgres:16-alpine
-    container_name: trinity-postgres
+    container_name: postgres-trinity
     restart: unless-stopped
     ports:
       - "${POSTGRES_PORT:-5433}:5432"
