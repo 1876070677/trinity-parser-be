@@ -27,6 +27,21 @@ services:
       timeout: 10s
       retries: 5
 
+  kafka-init:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: trinity-kafka-init
+    restart: on-failure
+    depends_on:
+      kafka:
+        condition: service_healthy
+    entrypoint: ["/bin/sh", "-c"]
+    command: |
+      "
+      echo 'Verifying Kafka is ready...'
+      kafka-topics --bootstrap-server kafka:29092 --list
+      echo 'Kafka is ready!'
+      "
+
   redis:
     image: redis:7-alpine
     container_name: redis-trinity
@@ -74,8 +89,8 @@ services:
       PORT: 3000
       JWT_SECRET: ${JWT_SECRET}
     depends_on:
-      kafka:
-        condition: service_healthy
+      kafka-init:
+        condition: service_completed_successfully
 
   user-service:
     build:
@@ -88,8 +103,8 @@ services:
       KAFKA_BROKER: kafka:29092
       JWT_SECRET: ${JWT_SECRET}
     depends_on:
-      kafka:
-        condition: service_healthy
+      kafka-init:
+        condition: service_completed_successfully
 
   management-service:
     build:
@@ -103,8 +118,8 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
     depends_on:
-      kafka:
-        condition: service_healthy
+      kafka-init:
+        condition: service_completed_successfully
       redis:
         condition: service_healthy
 
@@ -118,8 +133,8 @@ services:
     environment:
       KAFKA_BROKER: kafka:29092
     depends_on:
-      kafka:
-        condition: service_healthy
+      kafka-init:
+        condition: service_completed_successfully
 
   logging-service:
     build:
@@ -133,8 +148,8 @@ services:
     volumes:
       - ./logs:/app/logs
     depends_on:
-      kafka:
-        condition: service_healthy
+      kafka-init:
+        condition: service_completed_successfully
 
   board-service:
     build:
@@ -151,8 +166,8 @@ services:
       DB_PASSWORD: ${POSTGRES_PASSWORD}
       DB_NAME: ${POSTGRES_DB}
     depends_on:
-      kafka:
-        condition: service_healthy
+      kafka-init:
+        condition: service_completed_successfully
       postgres:
         condition: service_healthy
 
