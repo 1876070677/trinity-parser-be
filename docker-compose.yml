@@ -3,7 +3,7 @@ version: '3.8'
 services:
   kafka:
     image: confluentinc/cp-kafka:7.5.0
-    container_name: kafka
+    container_name: trinity-kafka
     restart: unless-stopped
     ports:
       - "9092:9092"
@@ -29,10 +29,10 @@ services:
 
   redis:
     image: redis:7-alpine
-    container_name: redis
+    container_name: trinity-redis
     restart: unless-stopped
     ports:
-      - "6379:6379"
+      - "${REDIS_PORT:-6380}:6379"
     volumes:
       - redis-data:/data
     command: redis-server --appendonly yes
@@ -44,18 +44,18 @@ services:
 
   postgres:
     image: postgres:16-alpine
-    container_name: postgres
+    container_name: trinity-postgres
     restart: unless-stopped
     ports:
-      - "5432:5432"
+      - "${POSTGRES_PORT:-5433}:5432"
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: trinity
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     volumes:
       - postgres-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
       interval: 5s
       timeout: 3s
       retries: 5
@@ -65,13 +65,14 @@ services:
       context: .
       args:
         APP_NAME: api-gateway
-    container_name: api-gateway
+    container_name: trinity-api-gateway
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - "${API_PORT:-3001}:3000"
     environment:
       KAFKA_BROKER: kafka:29092
       PORT: 3000
+      JWT_SECRET: ${JWT_SECRET}
     depends_on:
       kafka:
         condition: service_healthy
@@ -81,10 +82,11 @@ services:
       context: .
       args:
         APP_NAME: user-service
-    container_name: user-service
+    container_name: trinity-user-service
     restart: unless-stopped
     environment:
       KAFKA_BROKER: kafka:29092
+      JWT_SECRET: ${JWT_SECRET}
     depends_on:
       kafka:
         condition: service_healthy
@@ -94,7 +96,7 @@ services:
       context: .
       args:
         APP_NAME: management-service
-    container_name: management-service
+    container_name: trinity-management-service
     restart: unless-stopped
     environment:
       KAFKA_BROKER: kafka:29092
@@ -111,7 +113,7 @@ services:
       context: .
       args:
         APP_NAME: parsing-service
-    container_name: parsing-service
+    container_name: trinity-parsing-service
     restart: unless-stopped
     environment:
       KAFKA_BROKER: kafka:29092
@@ -124,7 +126,7 @@ services:
       context: .
       args:
         APP_NAME: logging-service
-    container_name: logging-service
+    container_name: trinity-logging-service
     restart: unless-stopped
     environment:
       KAFKA_BROKER: kafka:29092
@@ -139,15 +141,15 @@ services:
       context: .
       args:
         APP_NAME: board-service
-    container_name: board-service
+    container_name: trinity-board-service
     restart: unless-stopped
     environment:
       KAFKA_BROKER: kafka:29092
       DB_HOST: postgres
       DB_PORT: 5432
-      DB_USERNAME: postgres
-      DB_PASSWORD: postgres
-      DB_NAME: trinity
+      DB_USERNAME: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_NAME: ${POSTGRES_DB}
     depends_on:
       kafka:
         condition: service_healthy
