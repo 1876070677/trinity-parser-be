@@ -126,56 +126,54 @@ export class ApiGatewayController {
       this.userClient.send<LoginFormResponse>('user.loginForm', {}),
     );
 
-    // samlRequest를 쿠키로 설정
-    res.cookie('samlRequest', result.samlRequest, { httpOnly: true });
-
     // 학교 서버 쿠키들을 우리 도메인으로 재설정
     this.setSchoolCookies(res, result.cookies);
 
-    res.json({ success: true });
+    // samlRequest를 body로 반환
+    res.json({ success: true, samlRequest: result.samlRequest });
   }
 
   // 2단계: id/password로 SAMLResponse 획득
   @Post('api/auth')
   async auth(
     @Req() req: Request,
-    @Body() authData: { id: string; password: string },
+    @Body() authData: { id: string; password: string; samlRequest: string },
     @Res() res: Response,
   ): Promise<void> {
-    // 쿠키에서 samlRequest와 학교 쿠키 추출
+    // 쿠키에서 학교 쿠키 추출
     const reqCookies = (req.cookies ?? {}) as Record<string, string>;
-    const samlRequest = reqCookies['samlRequest'] ?? '';
     const cookies = this.extractSchoolCookies(reqCookies);
 
     const result = await lastValueFrom(
       this.userClient.send<AuthResponse>('user.auth', {
         id: authData.id,
         password: authData.password,
-        samlRequest,
+        samlRequest: authData.samlRequest,
         cookies,
       }),
     );
 
-    // samlResponse를 쿠키로 설정
-    res.cookie('samlResponse', result.samlResponse, { httpOnly: true });
-
     // 학교 서버 쿠키들을 우리 도메인으로 재설정
     this.setSchoolCookies(res, result.cookies);
 
-    res.json({ success: true });
+    // samlResponse를 body로 반환
+    res.json({ success: true, samlResponse: result.samlResponse });
   }
 
   // 3단계: csrf 토큰 획득
   @Post('api/login')
-  async login(@Req() req: Request, @Res() res: Response): Promise<void> {
-    // 쿠키에서 samlResponse와 학교 쿠키 추출
+  async login(
+    @Req() req: Request,
+    @Body() body: { samlResponse: string },
+    @Res() res: Response,
+  ): Promise<void> {
+    // 쿠키에서 학교 쿠키 추출
     const reqCookies = (req.cookies ?? {}) as Record<string, string>;
-    const samlResponse = reqCookies['samlResponse'] ?? '';
     const cookies = this.extractSchoolCookies(reqCookies);
 
     const result = await lastValueFrom(
       this.userClient.send<LoginResponse>('user.login', {
-        samlResponse,
+        samlResponse: body.samlResponse,
         cookies,
       }),
     );
@@ -185,10 +183,6 @@ export class ApiGatewayController {
 
     // 학교 서버 쿠키들을 우리 도메인으로 재설정
     this.setSchoolCookies(res, result.cookies);
-
-    // 이전 단계 쿠키 정리
-    res.clearCookie('samlRequest');
-    res.clearCookie('samlResponse');
 
     res.json({ success: true, accessToken: result.accessToken });
   }

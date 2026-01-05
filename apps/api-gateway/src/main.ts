@@ -9,6 +9,11 @@ async function bootstrap() {
   const app =
     await NestFactory.create<NestExpressApplication>(ApiGatewayModule);
 
+  app.enableCors({
+    origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+    credentials: true,
+  });
+
   app.use(cookieParser());
   app.useGlobalPipes(new ValidationPipe());
   app.useStaticAssets(join(process.cwd(), 'apps', 'api-gateway', 'public'));
