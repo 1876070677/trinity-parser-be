@@ -1,9 +1,5 @@
-import {
-  Injectable,
-  BadGatewayException,
-  BadRequestException,
-  ForbiddenException,
-} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
+import { RpcException } from '@nestjs/microservices';
 import {
   SubjectInfoRequest,
   SubjectInfoResponse,
@@ -51,7 +47,10 @@ export class ParsingServiceService {
     );
 
     if (!response.ok) {
-      throw new BadGatewayException('학교 서버 응답 오류');
+      throw new RpcException({
+        statusCode: 502,
+        message: '학교 서버 응답 오류',
+      });
     }
 
     const jsonData = (await response.json()) as {
@@ -89,7 +88,10 @@ export class ParsingServiceService {
       }
     }
 
-    throw new BadRequestException('과목 코드 또는 분반이 유효하지 않습니다.');
+    throw new RpcException({
+      statusCode: 400,
+      message: '과목 코드 또는 분반이 유효하지 않습니다.',
+    });
   }
 
   private async getRemainNo(
@@ -132,7 +134,10 @@ export class ParsingServiceService {
     );
 
     if (!response.ok) {
-      throw new BadGatewayException('학교 서버 응답 오류');
+      throw new RpcException({
+        statusCode: 500,
+        message: '학교 서버 응답 오류',
+      });
     }
 
     const jsonData = (await response.json()) as {
@@ -158,9 +163,10 @@ export class ParsingServiceService {
 
   async getGrades(data: GradeRequest): Promise<GradeResponse> {
     if (!data.shtmFg) {
-      throw new ForbiddenException(
-        '휴학생 또는 졸업생의 경우, 조회가 불가능합니다.',
-      );
+      throw new RpcException({
+        statusCode: 404,
+        message: '휴학생 또는 졸업생의 경우, 조회가 불가능합니다.',
+      });
     }
 
     const formBody = new URLSearchParams({
@@ -194,7 +200,10 @@ export class ParsingServiceService {
     );
 
     if (!response.ok) {
-      throw new BadGatewayException('학교 서버 응답 오류');
+      throw new RpcException({
+        statusCode: 500,
+        message: '학교 서버 응답 오류',
+      });
     }
 
     const jsonData = (await response.json()) as {

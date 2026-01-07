@@ -367,19 +367,26 @@ export class ApiGatewayController {
     const csrf = reqCookies['csrf'] ?? '';
     const cookies = this.extractSchoolCookies(reqCookies);
 
-    const result = await lastValueFrom(
-      this.parsingClient.send<SubjectInfoResponse>('parsing.subjectInfo', {
-        csrf,
-        cookies,
-        sujtNo: body.sujtNo,
-        classNo: body.classNo,
-        campFg: body.campFg,
-        shtm: body.shtm,
-        yyyy: body.yyyy,
-      }),
-    );
+    try {
+      const result = await lastValueFrom(
+        this.parsingClient.send<SubjectInfoResponse>('parsing.subjectInfo', {
+          csrf,
+          cookies,
+          sujtNo: body.sujtNo,
+          classNo: body.classNo,
+          campFg: body.campFg,
+          shtm: body.shtm,
+          yyyy: body.yyyy,
+        }),
+      );
 
-    res.json({ success: true, subjectInfo: result });
+      res.json({ success: true, subjectInfo: result });
+    } catch (error) {
+      const statusCode = (error as { statusCode?: number })?.statusCode ?? 500;
+      const message =
+        (error as { message?: string })?.message ?? 'Internal server error';
+      res.status(statusCode).json({ success: false, message });
+    }
   }
 
   // 성적 조회
@@ -399,18 +406,25 @@ export class ApiGatewayController {
     const csrf = reqCookies['csrf'] ?? '';
     const cookies = this.extractSchoolCookies(reqCookies);
 
-    const result = await lastValueFrom(
-      this.parsingClient.send<GradeResponse>('parsing.grade', {
-        csrf,
-        cookies,
-        campFg: body.campFg,
-        shtmYyyy: body.shtmYyyy,
-        shtmFg: body.shtmFg,
-        stdNo: body.stdNo,
-      }),
-    );
+    try {
+      const result = await lastValueFrom(
+        this.parsingClient.send<GradeResponse>('parsing.grade', {
+          csrf,
+          cookies,
+          campFg: body.campFg,
+          shtmYyyy: body.shtmYyyy,
+          shtmFg: body.shtmFg,
+          stdNo: body.stdNo,
+        }),
+      );
 
-    res.json({ success: true, grades: result.grades });
+      res.json({ success: true, grades: result.grades });
+    } catch (error) {
+      const statusCode = (error as { statusCode?: number })?.statusCode ?? 500;
+      const message =
+        (error as { message?: string })?.message ?? 'Internal server error';
+      res.status(statusCode).json({ success: false, message });
+    }
   }
 
   // 게시글 작성
