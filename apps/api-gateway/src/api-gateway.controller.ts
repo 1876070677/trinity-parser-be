@@ -1,8 +1,10 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Inject,
+  Param,
   Post,
   Query,
   Res,
@@ -23,7 +25,13 @@ import {
 } from '@libs/types';
 import { AuthGuard } from '@libs/auth';
 import { ApiGatewayService } from './api-gateway.service';
-import { CreatePostDto, ListPostsDto, ListPostsResponseDto } from '@libs/dto';
+import { ManagementAuthGuard } from './guards/management-auth.guard';
+import {
+  CreatePostDto,
+  CreateAdminPostDto,
+  ListPostsDto,
+  ListPostsResponseDto,
+} from '@libs/dto';
 
 @Controller()
 export class ApiGatewayController {
@@ -55,6 +63,8 @@ export class ApiGatewayController {
     const parsingTopics = ['parsing.subjectInfo', 'parsing.grade'];
     const boardTopics = [
       'board.createPost',
+      'board.createAdminPost',
+      'board.deletePost',
       'board.likePost',
       'board.listPosts',
     ];
@@ -468,6 +478,51 @@ export class ApiGatewayController {
   @UseGuards(AuthGuard)
   @Get('api/vl/post')
   async listPosts(
+    @Query() query: ListPostsDto,
+    @Res() res: Response,
+  ): Promise<void> {
+    const result = await lastValueFrom(
+      this.boardClient.send<ListPostsResponseDto>('board.listPosts', query),
+    );
+
+    res.json(result);
+  }
+
+  // 게시글 삭제 (관리자 전용)
+  @UseGuards(ManagementAuthGuard)
+  @Delete('api/mng/post/:id')
+  async deletePost(
+    @Param('id') id: string,
+    @Res() res: Response,
+  ): Promise<void> {
+    const result = await lastValueFrom(
+      this.boardClient.send<{ success: boolean }>('board.deletePost', { id }),
+    );
+
+    res.json(result);
+  }
+
+  // 관리자 게시글 작성
+  @UseGuards(ManagementAuthGuard)
+  @Post('api/mng/post')
+  async createAdminPost(
+    @Body() body: CreateAdminPostDto,
+    @Res() res: Response,
+  ): Promise<void> {
+    const result = await lastValueFrom(
+      this.boardClient.send<{ success: boolean; id?: string }>(
+        'board.createAdminPost',
+        { content: body.content },
+      ),
+    );
+
+    res.json(result);
+  }
+
+  // 관리자용 게시글 목록 조회
+  @UseGuards(ManagementAuthGuard)
+  @Get('api/mng/post')
+  async listPostsForAdmin(
     @Query() query: ListPostsDto,
     @Res() res: Response,
   ): Promise<void> {

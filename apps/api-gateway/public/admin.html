@@ -17,7 +17,8 @@
       min-height: 100vh;
       display: flex;
       justify-content: center;
-      align-items: center;
+      align-items: flex-start;
+      padding: 40px 20px;
     }
 
     .container {
@@ -26,7 +27,7 @@
       border-radius: 8px;
       box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
       width: 100%;
-      max-width: 400px;
+      max-width: 600px;
     }
 
     h1 {
@@ -34,6 +35,14 @@
       margin-bottom: 30px;
       color: #333;
       font-size: 24px;
+    }
+
+    h2 {
+      margin-bottom: 20px;
+      color: #333;
+      font-size: 18px;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 10px;
     }
 
     .form-group {
@@ -47,7 +56,7 @@
       font-weight: 500;
     }
 
-    input, select {
+    input, select, textarea {
       width: 100%;
       padding: 12px;
       border: 1px solid #ddd;
@@ -55,7 +64,12 @@
       font-size: 14px;
     }
 
-    input:focus, select:focus {
+    textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    input:focus, select:focus, textarea:focus {
       outline: none;
       border-color: #007bff;
     }
@@ -87,6 +101,17 @@
     }
 
     .btn-logout:hover {
+      background-color: #c82333;
+    }
+
+    .btn-danger {
+      background-color: #dc3545;
+      padding: 6px 12px;
+      font-size: 12px;
+      width: auto;
+    }
+
+    .btn-danger:hover {
       background-color: #c82333;
     }
 
@@ -126,6 +151,117 @@
     .current-settings strong {
       color: #212529;
     }
+
+    .section {
+      margin-bottom: 30px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid #eee;
+    }
+
+    .section:last-child {
+      border-bottom: none;
+      margin-bottom: 0;
+      padding-bottom: 0;
+    }
+
+    .post-list {
+      max-height: 400px;
+      overflow-y: auto;
+    }
+
+    .post-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      margin-bottom: 10px;
+      background-color: #fafafa;
+    }
+
+    .post-item.admin-post {
+      background-color: #fff3cd;
+      border-color: #ffc107;
+    }
+
+    .post-content {
+      flex: 1;
+      margin-right: 10px;
+    }
+
+    .post-content p {
+      margin: 0 0 8px 0;
+      word-break: break-word;
+    }
+
+    .post-meta {
+      font-size: 12px;
+      color: #666;
+    }
+
+    .post-meta span {
+      margin-right: 10px;
+    }
+
+    .admin-badge {
+      background-color: #ffc107;
+      color: #000;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-size: 10px;
+      font-weight: bold;
+    }
+
+    .post-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .post-actions button {
+      flex: 1;
+    }
+
+    .btn-secondary {
+      background-color: #6c757d;
+    }
+
+    .btn-secondary:hover {
+      background-color: #5a6268;
+    }
+
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 10px;
+    }
+
+    .section-header h2 {
+      margin-bottom: 0;
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+
+    .btn-refresh {
+      background-color: #28a745;
+      padding: 6px 12px;
+      font-size: 12px;
+      width: auto;
+    }
+
+    .btn-refresh:hover {
+      background-color: #218838;
+    }
+
+    .empty-message {
+      text-align: center;
+      color: #666;
+      padding: 20px;
+    }
   </style>
 </head>
 <body>
@@ -147,46 +283,83 @@
       </form>
     </div>
 
-    <!-- Settings Section -->
-    <div id="settingsSection" class="hidden">
-      <h1>Settings</h1>
-      <div id="settingsMessage" class="message hidden"></div>
+    <!-- Admin Panel Section -->
+    <div id="adminSection" class="hidden">
+      <h1>Admin Panel</h1>
+      <div id="adminMessage" class="message hidden"></div>
 
-      <div class="current-settings">
-        <p><strong>Current Settings</strong></p>
-        <p>Year: <span id="currentYyyy">-</span></p>
-        <p>Semester: <span id="currentShtm">-</span></p>
+      <!-- Settings Section -->
+      <div class="section">
+        <h2>Settings</h2>
+        <div class="current-settings">
+          <p><strong>Current Settings</strong></p>
+          <p>Year: <span id="currentYyyy">-</span></p>
+          <p>Semester: <span id="currentShtm">-</span></p>
+        </div>
+
+        <form id="settingsForm">
+          <div class="form-group">
+            <label for="yyyy">Year (yyyy)</label>
+            <input type="text" id="yyyy" name="yyyy" placeholder="2025" pattern="\d{4}" required>
+          </div>
+          <div class="form-group">
+            <label for="shtm">Semester (shtm)</label>
+            <select id="shtm" name="shtm" required>
+              <option value="">Select Semester</option>
+              <option value="10">1학기 (10)</option>
+              <option value="15">여름계절 (15)</option>
+              <option value="20">2학기 (20)</option>
+              <option value="25">겨울계절 (25)</option>
+            </select>
+          </div>
+          <button type="submit">Save Settings</button>
+        </form>
       </div>
 
-      <form id="settingsForm">
-        <div class="form-group">
-          <label for="yyyy">Year (yyyy)</label>
-          <input type="text" id="yyyy" name="yyyy" placeholder="2025" pattern="\d{4}" required>
+      <!-- Admin Post Section -->
+      <div class="section">
+        <h2>Create Admin Post</h2>
+        <form id="adminPostForm">
+          <div class="form-group">
+            <label for="postContent">Content</label>
+            <textarea id="postContent" name="content" maxlength="500" placeholder="Enter admin announcement..." required></textarea>
+          </div>
+          <button type="submit">Create Post</button>
+        </form>
+      </div>
+
+      <!-- Post List Section -->
+      <div class="section">
+        <div class="section-header">
+          <h2>Post Management</h2>
+          <button type="button" id="refreshBtn" class="btn-refresh">Refresh</button>
         </div>
-        <div class="form-group">
-          <label for="shtm">Semester (shtm)</label>
-          <select id="shtm" name="shtm" required>
-            <option value="">Select Semester</option>
-            <option value="10">1학기 (10)</option>
-            <option value="15">여름계절 (15)</option>
-            <option value="20">2학기 (20)</option>
-            <option value="25">겨울계절 (25)</option>
-          </select>
+        <div id="postList" class="post-list">
+          <p class="empty-message">Loading posts...</p>
         </div>
-        <button type="submit">Save Settings</button>
-      </form>
+        <div class="post-actions">
+          <button type="button" id="loadMoreBtn" class="btn-secondary hidden">Load More</button>
+        </div>
+      </div>
+
       <button type="button" class="btn-logout" id="logoutBtn">Logout</button>
     </div>
   </div>
 
   <script>
     const loginSection = document.getElementById('loginSection');
-    const settingsSection = document.getElementById('settingsSection');
+    const adminSection = document.getElementById('adminSection');
     const loginForm = document.getElementById('loginForm');
     const settingsForm = document.getElementById('settingsForm');
+    const adminPostForm = document.getElementById('adminPostForm');
     const logoutBtn = document.getElementById('logoutBtn');
+    const loadMoreBtn = document.getElementById('loadMoreBtn');
+    const refreshBtn = document.getElementById('refreshBtn');
     const loginMessage = document.getElementById('loginMessage');
-    const settingsMessage = document.getElementById('settingsMessage');
+    const adminMessage = document.getElementById('adminMessage');
+    const postList = document.getElementById('postList');
+
+    let nextCursor = null;
 
     function showMessage(element, message, isError = false) {
       element.textContent = message;
@@ -195,15 +368,17 @@
       setTimeout(() => element.classList.add('hidden'), 3000);
     }
 
-    function showSettings() {
+    function showAdmin() {
       loginSection.classList.add('hidden');
-      settingsSection.classList.remove('hidden');
+      adminSection.classList.remove('hidden');
       loadCurrentSettings();
+      loadPosts();
     }
 
     function showLogin() {
-      settingsSection.classList.add('hidden');
+      adminSection.classList.add('hidden');
       loginSection.classList.remove('hidden');
+      nextCursor = null;
     }
 
     async function loadCurrentSettings() {
@@ -217,6 +392,80 @@
       } catch (error) {
         console.error('Failed to load settings:', error);
       }
+    }
+
+    async function loadPosts(append = false) {
+      try {
+        let url = '/api/mng/post?limit=10';
+        if (append && nextCursor) {
+          url += `&cursor=${encodeURIComponent(nextCursor)}`;
+        }
+
+        const response = await fetch(url);
+        const data = await response.json();
+
+        if (!append) {
+          postList.innerHTML = '';
+        }
+
+        if (data.data && data.data.length > 0) {
+          data.data.forEach(post => {
+            const postEl = document.createElement('div');
+            postEl.className = `post-item${post.isAdmin ? ' admin-post' : ''}`;
+            postEl.innerHTML = `
+              <div class="post-content">
+                <p>${escapeHtml(post.content)}</p>
+                <div class="post-meta">
+                  ${post.isAdmin ? '<span class="admin-badge">ADMIN</span>' : ''}
+                  <span>ID: ${post.stdNo}</span>
+                  <span>Likes: ${post.likes}</span>
+                  <span>${new Date(post.createdAt).toLocaleString('ko-KR')}</span>
+                </div>
+              </div>
+              <button class="btn-danger" onclick="deletePost('${post.id}')">Delete</button>
+            `;
+            postList.appendChild(postEl);
+          });
+        } else if (!append) {
+          postList.innerHTML = '<p class="empty-message">No posts found.</p>';
+        }
+
+        nextCursor = data.meta?.nextCursor || null;
+        loadMoreBtn.classList.toggle('hidden', !nextCursor);
+      } catch (error) {
+        console.error('Failed to load posts:', error);
+        if (!append) {
+          postList.innerHTML = '<p class="empty-message">Failed to load posts.</p>';
+        }
+      }
+    }
+
+    async function deletePost(id) {
+      if (!confirm('Are you sure you want to delete this post?')) {
+        return;
+      }
+
+      try {
+        const response = await fetch(`/api/mng/post/${id}`, {
+          method: 'DELETE'
+        });
+
+        const data = await response.json();
+        if (data.success) {
+          showMessage(adminMessage, 'Post deleted!');
+          loadPosts();
+        } else {
+          showMessage(adminMessage, 'Failed to delete post', true);
+        }
+      } catch (error) {
+        showMessage(adminMessage, 'Network error', true);
+      }
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
     }
 
     loginForm.addEventListener('submit', async (e) => {
@@ -234,7 +483,7 @@
         const data = await response.json();
         if (data.success) {
           showMessage(loginMessage, 'Login successful!');
-          setTimeout(showSettings, 500);
+          setTimeout(showAdmin, 500);
         } else {
           showMessage(loginMessage, data.message || 'Login failed', true);
         }
@@ -257,15 +506,59 @@
 
         const data = await response.json();
         if (data.success) {
-          showMessage(settingsMessage, 'Settings saved!');
+          showMessage(adminMessage, 'Settings saved!');
           loadCurrentSettings();
         } else {
-          showMessage(settingsMessage, data.message || 'Failed to save', true);
+          showMessage(adminMessage, data.message || 'Failed to save', true);
         }
       } catch (error) {
-        showMessage(settingsMessage, 'Network error', true);
+        showMessage(adminMessage, 'Network error', true);
       }
     });
+
+    adminPostForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const content = document.getElementById('postContent').value;
+
+      try {
+        const response = await fetch('/api/mng/post', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ content })
+        });
+
+        const data = await response.json();
+        if (data.success) {
+          showMessage(adminMessage, 'Admin post created!');
+          document.getElementById('postContent').value = '';
+          loadPosts();
+        } else {
+          showMessage(adminMessage, 'Failed to create post', true);
+        }
+      } catch (error) {
+        showMessage(adminMessage, 'Network error', true);
+      }
+    });
+
+    loadMoreBtn.addEventListener('click', () => {
+      loadPosts(true);
+    });
+
+    refreshBtn.addEventListener('click', () => {
+      loadPosts();
+    });
+
+    // 페이지 로드 시 세션 체크
+    (async function checkSession() {
+      try {
+        const response = await fetch('/api/mng/shtmYyyy');
+        if (response.ok) {
+          showAdmin();
+        }
+      } catch (error) {
+        // 세션 없음, 로그인 화면 유지
+      }
+    })();
 
     logoutBtn.addEventListener('click', async () => {
       try {

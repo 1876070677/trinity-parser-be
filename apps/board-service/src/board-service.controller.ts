@@ -2,12 +2,19 @@ import { Controller, OnModuleInit } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { Kafka } from 'kafkajs';
 import { BoardServiceService } from './board-service.service';
-import { CreatePostDto, ListPostsDto, ListPostsResponseDto } from '@libs/dto';
+import {
+  CreatePostDto,
+  CreateAdminPostDto,
+  ListPostsDto,
+  ListPostsResponseDto,
+} from '@libs/dto';
 
 @Controller()
 export class BoardServiceController implements OnModuleInit {
   private readonly topics = [
     'board.createPost',
+    'board.createAdminPost',
+    'board.deletePost',
     'board.likePost',
     'board.listPosts',
   ];
@@ -49,6 +56,20 @@ export class BoardServiceController implements OnModuleInit {
     @Payload() data: CreatePostDto,
   ): Promise<{ success: boolean; id?: string }> {
     return this.boardServiceService.createPost(data);
+  }
+
+  @MessagePattern('board.createAdminPost')
+  async createAdminPost(
+    @Payload() data: CreateAdminPostDto,
+  ): Promise<{ success: boolean; id?: string }> {
+    return await this.boardServiceService.createAdminPost(data);
+  }
+
+  @MessagePattern('board.deletePost')
+  async deletePost(
+    @Payload() data: { id: string },
+  ): Promise<{ success: boolean }> {
+    return await this.boardServiceService.deletePost(data.id);
   }
 
   @MessagePattern('board.likePost')

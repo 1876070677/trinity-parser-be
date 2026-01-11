@@ -2,7 +2,12 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Post } from './entities/post.entity';
-import { CreatePostDto, ListPostsDto, ListPostsResponseDto } from '@libs/dto';
+import {
+  CreatePostDto,
+  CreateAdminPostDto,
+  ListPostsDto,
+  ListPostsResponseDto,
+} from '@libs/dto';
 
 @Injectable()
 export class BoardServiceService {
@@ -20,6 +25,23 @@ export class BoardServiceService {
     });
     const saved = await this.postRepository.save(post);
     return { success: true, id: saved.id };
+  }
+
+  async createAdminPost(
+    data: CreateAdminPostDto,
+  ): Promise<{ success: boolean; id?: string }> {
+    const post = this.postRepository.create({
+      stdNo: 'ADMIN',
+      content: data.content,
+      isAdmin: true,
+    });
+    const saved = await this.postRepository.save(post);
+    return { success: true, id: saved.id };
+  }
+
+  async deletePost(id: string): Promise<{ success: boolean }> {
+    const result = await this.postRepository.delete({ id });
+    return { success: (result.affected ?? 0) > 0 };
   }
 
   async likePost(id: string): Promise<{ success: boolean; likes?: number }> {
