@@ -1,28 +1,95 @@
 version: '3.8'
 
 services:
-  kafka:
+  broker1:
     image: confluentinc/cp-kafka:7.5.0
-    container_name: trinity-kafka
+    container_name: trinity-broker1
     restart: unless-stopped
     ports:
       - "9092:9092"
     environment:
       KAFKA_NODE_ID: 1
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
-      KAFKA_LISTENERS: PLAINTEXT://kafka:29092,CONTROLLER://kafka:29093,PLAINTEXT_HOST://0.0.0.0:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker1:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_LISTENERS: PLAINTEXT://broker1:29092,CONTROLLER://broker1:29093,PLAINTEXT_HOST://0.0.0.0:9092
       KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
-      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:29093
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@broker1:29093,2@broker2:29093,3@broker3:29093
       KAFKA_PROCESS_ROLES: broker,controller
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
-      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
       CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
-      # 안정성 설정 (dev와 동일)
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_DEFAULT_REPLICATION_FACTOR: 3
+      KAFKA_MIN_INSYNC_REPLICAS: 2
+    volumes:
+      - ./kafka/broker1:/var/lib/kafka/data
+    healthcheck:
+      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+
+  broker2:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: trinity-broker2
+    restart: unless-stopped
+    ports:
+      - "9093:9092"
+    environment:
+      KAFKA_NODE_ID: 2
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker2:29092,PLAINTEXT_HOST://localhost:9093
+      KAFKA_LISTENERS: PLAINTEXT://broker2:29092,CONTROLLER://broker2:29093,PLAINTEXT_HOST://0.0.0.0:9092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@broker1:29093,2@broker2:29093,3@broker3:29093
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_DEFAULT_REPLICATION_FACTOR: 3
+      KAFKA_MIN_INSYNC_REPLICAS: 2
+    volumes:
+      - ./kafka/broker2:/var/lib/kafka/data
+    healthcheck:
+      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+
+  broker3:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: trinity-broker3
+    restart: unless-stopped
+    ports:
+      - "9094:9092"
+    environment:
+      KAFKA_NODE_ID: 3
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker3:29092,PLAINTEXT_HOST://localhost:9094
+      KAFKA_LISTENERS: PLAINTEXT://broker3:29092,CONTROLLER://broker3:29093,PLAINTEXT_HOST://0.0.0.0:9092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@broker1:29093,2@broker2:29093,3@broker3:29093
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_DEFAULT_REPLICATION_FACTOR: 3
+      KAFKA_MIN_INSYNC_REPLICAS: 2
+    volumes:
+      - ./kafka/broker3:/var/lib/kafka/data
     healthcheck:
       test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092"]
       interval: 10s
@@ -35,14 +102,18 @@ services:
     container_name: trinity-kafka-init
     restart: on-failure
     depends_on:
-      kafka:
+      broker1:
+        condition: service_healthy
+      broker2:
+        condition: service_healthy
+      broker3:
         condition: service_healthy
     entrypoint: ["/bin/sh", "-c"]
     command: |
       "
-      echo 'Verifying Kafka is ready...'
-      kafka-topics --bootstrap-server kafka:29092 --list
-      echo 'Kafka is ready!'
+      echo 'Verifying Kafka cluster is ready...'
+      kafka-topics --bootstrap-server broker1:29092,broker2:29092,broker3:29092 --list
+      echo 'Kafka cluster is ready!'
       "
 
   redis:
@@ -88,7 +159,7 @@ services:
     ports:
       - "${API_PORT:-3001}:3000"
     environment:
-      KAFKA_BROKER: kafka:29092
+      KAFKA_BROKER: broker1:29092,broker2:29092,broker3:29092
       PORT: 3000
       JWT_SECRET: ${JWT_SECRET}
       CORS_ORIGIN: ${CORS_ORIGIN}
@@ -104,7 +175,7 @@ services:
     container_name: trinity-user-service
     restart: unless-stopped
     environment:
-      KAFKA_BROKER: kafka:29092
+      KAFKA_BROKER: broker1:29092,broker2:29092,broker3:29092
       JWT_SECRET: ${JWT_SECRET}
     depends_on:
       kafka-init:
@@ -118,7 +189,7 @@ services:
     container_name: trinity-management-service
     restart: unless-stopped
     environment:
-      KAFKA_BROKER: kafka:29092
+      KAFKA_BROKER: broker1:29092,broker2:29092,broker3:29092
       REDIS_HOST: redis
       REDIS_PORT: 6379
     depends_on:
@@ -135,7 +206,7 @@ services:
     container_name: trinity-parsing-service
     restart: unless-stopped
     environment:
-      KAFKA_BROKER: kafka:29092
+      KAFKA_BROKER: broker1:29092,broker2:29092,broker3:29092
     depends_on:
       kafka-init:
         condition: service_completed_successfully
@@ -148,7 +219,7 @@ services:
     container_name: trinity-logging-service
     restart: unless-stopped
     environment:
-      KAFKA_BROKER: kafka:29092
+      KAFKA_BROKER: broker1:29092,broker2:29092,broker3:29092
     volumes:
       - ./logs:/app/logs
     depends_on:
@@ -163,7 +234,7 @@ services:
     container_name: trinity-board-service
     restart: unless-stopped
     environment:
-      KAFKA_BROKER: kafka:29092
+      KAFKA_BROKER: broker1:29092,broker2:29092,broker3:29092
       DB_HOST: postgres
       DB_PORT: 5432
       DB_USERNAME: ${POSTGRES_USER}
