@@ -68,8 +68,8 @@ pipeline {
                     echo "Waiting for services to be healthy..."
                     sleep 30
 
-                    # Kafka 상태 확인
-                    docker exec trinity-kafka kafka-broker-api-versions --bootstrap-server localhost:9092 || exit 1
+                    # Kafka 상태 확인 (브로커 클러스터)
+                    docker exec trinity-broker1 kafka-broker-api-versions --bootstrap-server localhost:9092 || exit 1
 
                     # Redis 상태 확인
                     docker exec redis-trinity redis-cli ping || exit 1
