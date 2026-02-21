@@ -43,7 +43,7 @@ pipeline {
         stage('Build Images') {
             steps {
                 sh '''
-                    docker-compose -f ${DOCKER_COMPOSE_FILE} -p ${PROJECT_NAME} build --no-cache
+                    docker-compose -f ${DOCKER_COMPOSE_FILE} -p ${PROJECT_NAME} build
                 '''
             }
         }
