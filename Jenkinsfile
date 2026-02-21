@@ -49,7 +49,7 @@ pipeline {
         stage('Prepare Kafka Directories') {
             steps {
                 sh '''
-                    chown -R 1000:1000 kafka/
+                    mkdir -p kafka/broker1 kafka/broker2 kafka/broker3
                 '''
             }
         }
