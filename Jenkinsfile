@@ -46,6 +46,14 @@ pipeline {
             }
         }
 
+        stage('Prepare Kafka Directories') {
+            steps {
+                sh '''
+                    chown -R 1000:1000 kafka/
+                '''
+            }
+        }
+
         stage('Deploy') {
             steps {
                 sh '''
