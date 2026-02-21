@@ -1,0 +1,15 @@
+# Kafka data directories
+kafka/
+broker*/
+
+# Build outputs
+dist/
+build/
+
+# Git
+.git/
+.gitignore
+
+# IDE
+.vscode/
+.idea/

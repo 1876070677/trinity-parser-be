@@ -1,6 +1,10 @@
 pipeline {
     agent any
 
+    tools {
+        nodejs 'trinity-parser'
+    }
+
     environment {
         DOCKER_COMPOSE_FILE = 'docker-compose.yml'
         PROJECT_NAME = 'trinity-parser'
@@ -27,6 +31,12 @@ pipeline {
                         chmod 644 .env
                     '''
                 }
+            }
+        }
+
+        stage('Install Dependencies') {
+            steps {
+                sh 'npm ci'
             }
         }
 
