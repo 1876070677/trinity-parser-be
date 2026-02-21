@@ -78,7 +78,7 @@ export class ApiGatewayController {
     // Kafka admin으로 reply 토픽 생성
     const kafka = new Kafka({
       clientId: 'api-gateway-admin',
-      brokers: [process.env.KAFKA_BROKER ?? 'localhost:9092'],
+      brokers: (process.env.KAFKA_BROKER ?? 'localhost:9092').split(','),
     });
     const admin = kafka.admin();
     await admin.connect();
@@ -90,7 +90,7 @@ export class ApiGatewayController {
       try {
         const created = await admin.createTopics({
           topics: [
-            { topic: replyTopic, numPartitions: 1, replicationFactor: 1 },
+            { topic: replyTopic, numPartitions: 1, replicationFactor: 3 },
           ],
         });
         if (created) {

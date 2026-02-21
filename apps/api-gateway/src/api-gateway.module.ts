@@ -14,7 +14,7 @@ import { ApiGatewayService } from './api-gateway.service';
         options: {
           client: {
             clientId: 'api-gateway',
-            brokers: [process.env.KAFKA_BROKER ?? 'localhost:9092'],
+            brokers: (process.env.KAFKA_BROKER ?? 'localhost:9092').split(','),
             retry: {
               initialRetryTime: 1000,
               retries: 10,
@@ -35,7 +35,7 @@ import { ApiGatewayService } from './api-gateway.service';
         options: {
           client: {
             clientId: 'api-gateway-management',
-            brokers: [process.env.KAFKA_BROKER ?? 'localhost:9092'],
+            brokers: (process.env.KAFKA_BROKER ?? 'localhost:9092').split(','),
             retry: {
               initialRetryTime: 1000,
               retries: 10,
@@ -56,7 +56,7 @@ import { ApiGatewayService } from './api-gateway.service';
         options: {
           client: {
             clientId: 'api-gateway-parsing',
-            brokers: [process.env.KAFKA_BROKER ?? 'localhost:9092'],
+            brokers: (process.env.KAFKA_BROKER ?? 'localhost:9092').split(','),
             retry: {
               initialRetryTime: 1000,
               retries: 10,
@@ -77,7 +77,7 @@ import { ApiGatewayService } from './api-gateway.service';
         options: {
           client: {
             clientId: 'api-gateway-board',
-            brokers: [process.env.KAFKA_BROKER ?? 'localhost:9092'],
+            brokers: (process.env.KAFKA_BROKER ?? 'localhost:9092').split(','),
             retry: {
               initialRetryTime: 1000,
               retries: 10,

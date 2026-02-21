@@ -16,7 +16,7 @@ export class ParsingServiceController implements OnModuleInit {
   async onModuleInit() {
     const kafka = new Kafka({
       clientId: 'parsing-service-admin',
-      brokers: [process.env.KAFKA_BROKER ?? 'localhost:9092'],
+      brokers: (process.env.KAFKA_BROKER ?? 'localhost:9092').split(','),
     });
     const admin = kafka.admin();
     await admin.connect();
@@ -26,7 +26,7 @@ export class ParsingServiceController implements OnModuleInit {
     for (const topic of this.topics) {
       try {
         const created = await admin.createTopics({
-          topics: [{ topic, numPartitions: 1, replicationFactor: 1 }],
+          topics: [{ topic, numPartitions: 1, replicationFactor: 3 }],
         });
         if (created) {
           createdTopics.push(topic);

@@ -12,7 +12,7 @@ import { ParsingServiceService } from './parsing-service.service';
         options: {
           client: {
             clientId: 'parsing-to-logging',
-            brokers: [process.env.KAFKA_BROKER ?? 'localhost:9092'],
+            brokers: (process.env.KAFKA_BROKER ?? 'localhost:9092').split(','),
           },
           consumer: {
             groupId: 'parsing-logging-consumer',

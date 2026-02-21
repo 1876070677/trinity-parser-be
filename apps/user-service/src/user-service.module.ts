@@ -14,7 +14,7 @@ import { UserServiceService } from './user-service.service';
         options: {
           client: {
             clientId: 'user-to-management',
-            brokers: [process.env.KAFKA_BROKER ?? 'localhost:9092'],
+            brokers: (process.env.KAFKA_BROKER ?? 'localhost:9092').split(','),
           },
         },
       },

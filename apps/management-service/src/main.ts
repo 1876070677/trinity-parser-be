@@ -10,7 +10,7 @@ async function bootstrap() {
       options: {
         client: {
           clientId: 'management',
-          brokers: [process.env.KAFKA_BROKER ?? 'localhost:9092'],
+          brokers: (process.env.KAFKA_BROKER ?? 'localhost:9092').split(','),
           retry: {
             initialRetryTime: 1000,
             retries: 10,
