@@ -16,6 +16,8 @@ export class BoardServiceService {
     private readonly postRepository: Repository<Post>,
   ) {}
 
+  private static readonly MAX_LIKES = 10000;
+
   async createPost(
     data: CreatePostDto,
   ): Promise<{ success: boolean; id?: string }> {
@@ -45,12 +47,22 @@ export class BoardServiceService {
   }
 
   async likePost(id: string): Promise<{ success: boolean; likes?: number }> {
-    // TypeORM increment는 DB 레벨에서 원자적으로 처리됨
-    // UPDATE post SET likes = likes + 1 WHERE id = ?
-    const result = await this.postRepository.increment({ id }, 'likes', 1);
+    // likes < MAX_LIKES 조건을 WHERE절에 포함시켜 DB 레벨에서 원자적으로 처리
+    // (조회 후 증가 방식은 동시 요청 시 최대치를 초과할 수 있어 race condition 발생)
+    const result = await this.postRepository
+      .createQueryBuilder()
+      .update(Post)
+      .set({ likes: () => '"likes" + 1' })
+      .where('id = :id', { id })
+      .andWhere('likes < :maxLikes', {
+        maxLikes: BoardServiceService.MAX_LIKES,
+      })
+      .execute();
 
     if (result.affected === 0) {
-      return { success: false };
+      // 게시글이 없거나 이미 최대 좋아요 수에 도달한 경우
+      const post = await this.postRepository.findOne({ where: { id } });
+      return { success: false, likes: post?.likes };
     }
 
     // 업데이트된 likes 값 조회
