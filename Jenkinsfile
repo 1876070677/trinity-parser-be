@@ -56,14 +56,6 @@ pipeline {
             }
         }
 
-        stage('Prepare Kafka Directories') {
-            steps {
-                sh '''
-                    mkdir -p kafka/broker1 kafka/broker2 kafka/broker3
-                '''
-            }
-        }
-
         stage('Deploy') {
             steps {
                 sh '''

@@ -25,7 +25,7 @@ services:
       KAFKA_DEFAULT_REPLICATION_FACTOR: 3
       KAFKA_MIN_INSYNC_REPLICAS: 2
     volumes:
-      - ./kafka/broker1:/var/lib/kafka/data
+      - ${KAFKA_DATA_DIR:-/var/trinity/kafka}/broker1:/var/lib/kafka/data
     healthcheck:
       test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092"]
       interval: 10s
@@ -57,7 +57,7 @@ services:
       KAFKA_DEFAULT_REPLICATION_FACTOR: 3
       KAFKA_MIN_INSYNC_REPLICAS: 2
     volumes:
-      - ./kafka/broker2:/var/lib/kafka/data
+      - ${KAFKA_DATA_DIR:-/var/trinity/kafka}/broker2:/var/lib/kafka/data
     healthcheck:
       test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092"]
       interval: 10s
@@ -89,7 +89,7 @@ services:
       KAFKA_DEFAULT_REPLICATION_FACTOR: 3
       KAFKA_MIN_INSYNC_REPLICAS: 2
     volumes:
-      - ./kafka/broker3:/var/lib/kafka/data
+      - ${KAFKA_DATA_DIR:-/var/trinity/kafka}/broker3:/var/lib/kafka/data
     healthcheck:
       test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092"]
       interval: 10s
